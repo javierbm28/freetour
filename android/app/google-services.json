@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1023481600539",
+    "project_id": "dicoverytour-3ae46",
+    "storage_bucket": "dicoverytour-3ae46.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1023481600539:android:fbfd6e719b05552090f6be",
+        "android_client_info": {
+          "package_name": "app.meedu.freetour"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBxT_qmbsyOG7KV7cvoRl0Y4FcLuejpnQk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
