@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/textField_auth.dart';
+import 'package:freetour/pagines/Pagina_Recuperacio.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -9,17 +12,17 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
 
-  TextEditingController controladorTextField1 = TextEditingController();
-  TextEditingController controladorTextField2 = TextEditingController();
+  TextEditingController controladorEmail = TextEditingController();
+  TextEditingController controladorContrasenya = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Discovery Tour"),
-        backgroundColor: Color.fromARGB(255, 63, 214, 63),
+        title: const Text("Discovery Tour"),
+        backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-
+      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
       body: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(15),
@@ -27,39 +30,60 @@ class _LoginState extends State<Login> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Text("Login", style: TextStyle(fontSize: 70, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 63, 214, 63) ),),
 
-            SizedBox(height: 50,),
-
-            TextField(
-              controller: controladorTextField1,
-              decoration: InputDecoration(
-                labelText: "Correo electrónico",
-                border: OutlineInputBorder()
+            Text("Login", 
+              style: GoogleFonts.aBeeZee(
+                textStyle: const TextStyle(
+                fontSize: 70, 
+                fontWeight: FontWeight.bold, 
+                color: Color.fromARGB(255, 63, 214, 63),
+                
               ),
+              ),
+              
+              
+              
             ),
 
-            SizedBox(height: 50,),
+            const SizedBox(height: 50,),
 
-            TextField(
-              controller: controladorTextField2,
-              decoration: InputDecoration(
-                labelText: "Contraseña",
-                border: OutlineInputBorder()
-              ),
+            TextFieldAuth(
+              controller: controladorEmail, 
+              obscureText: false, 
+              labelText: "Email",
             ),
 
-            SizedBox(height: 100,),
+            const SizedBox(height: 50,),
 
-            Text(
-                  "Olvidaste la contraseña? Haz click aquí", 
-                  style: TextStyle(color: Colors.blue),
+            TextFieldAuth(
+              controller: controladorContrasenya, 
+              obscureText: true, 
+              labelText: "Contraseña",
+            ),
+
+            const SizedBox(height: 100,),
+
+            GestureDetector(
+              onTap: (){
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RecuperarContrasenya()),
+                );
+              },
+              child: const Text(
+                    "Olvidaste la contraseña? Haz click aquí", 
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
             ),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
+                const SizedBox(
                   height: 200,
                 ),
 
@@ -68,10 +92,10 @@ class _LoginState extends State<Login> {
                     fixedSize: const Size(150, 50),
                   ),
                   onPressed: () {}, 
-                  child: Text("Registrate"),
+                  child: const Text("Registrate"),
                   ),
 
-                  SizedBox(
+                  const SizedBox(
                     width: 100,
                   ),
                   
@@ -80,7 +104,7 @@ class _LoginState extends State<Login> {
                     fixedSize: const Size(150, 50),
                   ),
                   onPressed: () {}, 
-                  child: Text("Entrar"))
+                  child: const Text("Entrar"))
               ],
             )
           ],
