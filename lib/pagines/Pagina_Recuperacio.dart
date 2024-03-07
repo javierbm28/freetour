@@ -25,68 +25,70 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
       backgroundColor: const Color.fromARGB(99, 141, 145, 140),
-      body: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(15),
-
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-
-             Text("Recuperar Contraseña", 
-              style: GoogleFonts.aBeeZee
-              (textStyle: const TextStyle(fontSize: 70, 
-                fontWeight: FontWeight.bold, 
-                color: Color.fromARGB(255, 63, 214, 63),),
-                
-                
+      body: SingleChildScrollView(
+        child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+        
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+        
+               Text("Recuperar Contraseña", 
+                style: GoogleFonts.aBeeZee
+                (textStyle: const TextStyle(
+                  fontSize: 70, 
+                  fontWeight: FontWeight.bold, 
+                  color: Color.fromARGB(255, 63, 214, 63),
+                  ),
+                ),
               ),
-            ),
-
-            const SizedBox(height: 50,),
-
-            TextFieldAuth(
-              controller: controladorEmail, 
-              obscureText: false, 
-              labelText: "Email",
-            ),
-
-            const SizedBox(height: 50,),
-
-            TextFieldAuth(
-              controller: controladorContrasenya, 
-              obscureText: true, 
-              labelText: "Nueva Contraseña",
-            ),
-
-            const SizedBox(height: 100,),
-
-            const Icon(
-              Icons.recommend,
-              size: 80,
-            ),
-
-            const Text(
-              "Recuerda apuntarte la nueva contraseña ;)",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
+        
+              const SizedBox(height: 50,),
+        
+              TextFieldAuth(
+                controller: controladorEmail, 
+                obscureText: false, 
+                labelText: "Email",
               ),
-            ),
-
-            const SizedBox(height: 100,),
-
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Login()),
-                );
-              }, 
-              child: const Text("Recuperar contraseña"),
-            ),
-          ],
+        
+              const SizedBox(height: 50,),
+        
+              TextFieldAuth(
+                controller: controladorContrasenya, 
+                obscureText: true, 
+                labelText: "Nueva Contraseña",
+              ),
+        
+              const SizedBox(height: 100,),
+        
+              const Icon(
+                Icons.recommend,
+                size: 80,
+              ),
+        
+              const Text(
+                "Recuerda apuntarte la nueva contraseña ;)",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+        
+              const SizedBox(height: 100,),
+        
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const Login()),
+                  );
+                }, 
+                child: const Text("Recuperar contraseña"),
+              ),
+            ],
+          ),
         ),
       ),
     );
