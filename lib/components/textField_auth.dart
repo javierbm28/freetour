@@ -27,6 +27,7 @@ class TextFieldAuth extends StatelessWidget {
         decoration: InputDecoration(
           labelText: labelText,
           border: const OutlineInputBorder(),
+          
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Recuperacio.dart';
+import 'package:freetour/pagines/Pagina_Registre.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class Login extends StatefulWidget {
@@ -85,7 +86,14 @@ class _LoginState extends State<Login> {
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(150, 50),
                     ),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const Registro()),
+                  );
+                    },
                     child: const Text("Registrate"),
                   ),
                   const SizedBox(
