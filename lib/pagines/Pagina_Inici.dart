@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/pagines/Pagina_Mapa.dart';
 
 class PaginaInici extends StatefulWidget {
   const PaginaInici({super.key});
@@ -64,7 +65,13 @@ class _PaginaIniciState extends State<PaginaInici> {
                     ),
                     fixedSize: const Size(150, 50),
                   ),
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => MapaFreeTour()),
+                        );
+                  },
                   child: const Text("Ir a mapa"),
             ),
             const SizedBox(

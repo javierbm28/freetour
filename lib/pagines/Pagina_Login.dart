@@ -89,11 +89,11 @@ class _LoginState extends State<Login> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Registro()),
-                  );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const Registro()),
+                      );
                     },
                     child: const Text("Registrate"),
                   ),
@@ -105,15 +105,13 @@ class _LoginState extends State<Login> {
                         fixedSize: const Size(150, 50),
                       ),
                       onPressed: () {
-                        Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PaginaInici()),
-                  );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const PaginaInici()),
+                        );
                       },
-                      child: const Text("Entrar")
-                  ),
+                      child: const Text("Entrar")),
                 ],
               )
             ],
