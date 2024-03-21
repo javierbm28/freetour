@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,13 +32,22 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
             padding: const EdgeInsets.all(15),
         
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
         
-               Text("Recuperar Contraseña", 
+              Text("Restablecer", 
                 style: GoogleFonts.aBeeZee
                 (textStyle: const TextStyle(
-                  fontSize: 70, 
+                  fontSize: 50, 
+                  fontWeight: FontWeight.bold, 
+                  color: Color.fromARGB(255, 63, 214, 63),
+                  ),
+                ),
+              ),
+              Text("contraseña", 
+                style: GoogleFonts.aBeeZee
+                (textStyle: const TextStyle(
+                  fontSize: 50, 
                   fontWeight: FontWeight.bold, 
                   color: Color.fromARGB(255, 63, 214, 63),
                   ),
@@ -77,15 +87,16 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
         
               const SizedBox(height: 100,),
         
-              ElevatedButton(
-                onPressed: () {
+              BotoAuth(
+                text: "Recuperar contraseña", 
+                onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Login()),
-                  );
-                }, 
-                child: const Text("Recuperar contraseña"),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const Login()),
+                        );
+                }
               ),
             ],
           ),

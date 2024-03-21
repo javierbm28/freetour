@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/Pagina_Mapa.dart';
 
 class PaginaInici extends StatefulWidget {
@@ -23,56 +24,47 @@ class _PaginaIniciState extends State<PaginaInici> {
             const SizedBox(
               height: 100,
             ),
-
-            const Text("Hola, [nombre]",
+            const Text(
+              "Hola, [nombre]",
               style: TextStyle(
-                fontSize: 50, 
+                fontSize: 50,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(
               height: 50,
             ),
-
-            const Text("Ganas de explorar y conocer sitios nuevos?",
+            const Text(
+              "Ganas de explorar y",
               style: TextStyle(
-                fontSize: 40, 
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
+            const Text(
+              "conocer sitios nuevos?",
+              style: TextStyle(
+                fontSize: 40,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(
               height: 50,
             ),
             Center(
               child: Image.asset('assets/foto.jfif'),
             ),
-
             const SizedBox(
               height: 100,
             ),
-
-            ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 63, 214, 63),
-                    padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
-                    minimumSize: const Size(500, 100),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                      fontSize: 50,
-                    ),
-                    fixedSize: const Size(150, 50),
-                  ),
-                  onPressed: () {
-                    Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => MapaFreeTour()),
-                        );
-                  },
-                  child: const Text("Ir a mapa"),
+            BotoAuth(
+              text: "Ir a mapa",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapaFreeTour()),
+                );
+              },
             ),
             const SizedBox(
               height: 50,
