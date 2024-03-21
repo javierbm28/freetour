@@ -89,24 +89,26 @@ class _LoginState extends State<Login> {
               const SizedBox(
                 height: 50,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  BotoAuth(
-                      text: "Registrarse",
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Registro()),
-                        );
-                      }),
-                  BotoAuth(
-                    text: "Entrar",
-                    onTap: () => ferLogin(context),
-                  ),
-                ],
+              SingleChildScrollView(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BotoAuth(
+                        text: "Registrarse",
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const Registro()),
+                          );
+                        }),
+                    BotoAuth(
+                      text: "Entrar",
+                      onTap: () => ferLogin(context),
+                    ),
+                  ],
+                ),
               )
             ],
           ),
