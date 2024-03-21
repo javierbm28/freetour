@@ -18,7 +18,7 @@ class _MapaFreeTourState extends State<MapaFreeTour> {
 
   List<String> opcionesRuta = ['Zona Sagrada Familia', 'Zona Glories', 'Zona Passeig de gracia', 'Zona Pedralbes', 'Ruta personalizada'];
 
-  List<String> opcionesPeligro = ['La Mina', 'Badalona', 'El raval', 'Santa Coloma de Gramenet', 'Zona peligrosa'];
+  List<String> opcionesPeligro = ['La Mina', 'Sant Roc', 'El Raval', 'Sant Cosme', 'Zona peligrosa'];
 
   List<String> opcionesPlan = ['Pub', 'Discotecas', 'Casinos', 'Entretenimiento para adultos', 'Plan nocturno'];
 
@@ -118,7 +118,8 @@ class _MapaFreeTourState extends State<MapaFreeTour> {
 
                       ElevatedButton(
                         onPressed: () {}, 
-                        child: const Text("Crear ruta personalizada"))
+                        child: const Text("Crear ruta personalizada")
+                      ),
                     ],
                   )
                 ],
