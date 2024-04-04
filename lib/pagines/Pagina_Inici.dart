@@ -34,7 +34,15 @@ class _PaginaIniciState extends State<PaginaInici> {
                 ),
             
                 const Text(
-                  "Hola, [nombre]",
+                  "Bienvenido/da a",
+                  style: TextStyle(
+                    fontSize: 50,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const Text(
+                  "Discovery Tour",
                   style: TextStyle(
                     fontSize: 50,
                     fontWeight: FontWeight.bold,
