@@ -31,6 +31,7 @@ class _RegistroState extends State<Registro> {
       ),
       backgroundColor: const Color.fromARGB(99, 141, 145, 140),
       body: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(15),
