@@ -107,6 +107,7 @@ class _MapaFreeTourState extends State<MapaFreeTour> {
                   ),
    
                   Row(
+                    
                     children: [
                       ElevatedButton(
                         onPressed: () {}, 

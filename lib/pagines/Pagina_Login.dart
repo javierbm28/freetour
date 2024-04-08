@@ -34,7 +34,6 @@ class _LoginState extends State<Login> {
       ),
       backgroundColor: const Color.fromARGB(98, 199, 202, 198),
       body: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(15),
