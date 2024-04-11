@@ -3,10 +3,15 @@ import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
 import 'package:freetour/pagines/Pagina_Recuperacio.dart';
 import 'package:freetour/pagines/Pagina_Registre.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Importar firebase_auth
 
 class Login extends StatefulWidget {
-  const Login({super.key});
+  final void Function() alFerClic;
+
+  const Login({
+    Key? key,
+    required this.alFerClic,
+  }) : super(key: key);
 
   @override
   State<Login> createState() => _LoginState();
@@ -33,12 +38,10 @@ class _LoginState extends State<Login> {
             children: [
               Text(
                 "Login",
-                style: GoogleFonts.aBeeZee(
-                  textStyle: const TextStyle(
-                    fontSize: 70,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 63, 214, 63),
-                  ),
+                style: TextStyle(
+                  fontSize: 70,
+                  fontWeight: FontWeight.bold,
+                  color: const Color.fromARGB(255, 63, 214, 63),
                 ),
               ),
               const SizedBox(
@@ -66,7 +69,8 @@ class _LoginState extends State<Login> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const RecuperarContrasenya()),
+                      builder: (context) => const RecuperarContrasenya(),
+                    ),
                   );
                 },
                 child: const Text(
@@ -92,7 +96,8 @@ class _LoginState extends State<Login> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const Registro()),
+                          builder: (context) => Registro(alFerClic: widget.alFerClic),
+                        ),
                       );
                     },
                     child: const Text("Registrate"),
@@ -101,17 +106,30 @@ class _LoginState extends State<Login> {
                     width: 100,
                   ),
                   ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(150, 50),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(150, 50),
+                    ),
+                    onPressed: () async {
+                      try {
+                        // Autenticar al usuario utilizando Firebase
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                          email: controladorEmail.text,
+                          password: controladorContrasenya.text,
+                        );
+                        // Navegar a la página de inicio después del inicio de sesión exitoso
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const PaginaInici()),
+                            builder: (context) => const PaginaInici(),
+                          ),
                         );
-                      },
-                      child: const Text("Entrar")),
+                      } catch (e) {
+                        print('Error al iniciar sesión: $e');
+                        // Manejar el error de inicio de sesión
+                      }
+                    },
+                    child: const Text("Entrar"),
+                  ),
                 ],
               )
             ],
