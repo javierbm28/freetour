@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:freetour/components/textField_auth.dart';
+import 'package:freetour/auth/servei_auth.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
 import 'package:freetour/pagines/Pagina_Recuperacio.dart';
 import 'package:freetour/pagines/Pagina_Registre.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Importar firebase_auth
 
 class Login extends StatefulWidget {
   final void Function() alFerClic;
@@ -18,8 +18,32 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  TextEditingController controladorEmail = TextEditingController();
-  TextEditingController controladorContrasenya = TextEditingController();
+  final TextEditingController _controllerEmail = TextEditingController();
+  final TextEditingController _controllerContrasenya = TextEditingController();
+  final ServeiAuth _serveiAuth = ServeiAuth();
+
+  void _ferLogin(BuildContext context) async {
+    try {
+      await _serveiAuth.loginAmbEmailIPassword(
+        _controllerEmail.text,
+        _controllerContrasenya.text,
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PaginaInici(),
+        ),
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text(e.toString()),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,19 +60,19 @@ class _LoginState extends State<Login> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 "Login",
                 style: TextStyle(
                   fontSize: 70,
                   fontWeight: FontWeight.bold,
-                  color: const Color.fromARGB(255, 63, 214, 63),
+                  color: Color.fromARGB(255, 63, 214, 63),
                 ),
               ),
               const SizedBox(
                 height: 50,
               ),
               TextFieldAuth(
-                controller: controladorEmail,
+                controller: _controllerEmail,
                 obscureText: false,
                 labelText: "Email",
               ),
@@ -56,7 +80,7 @@ class _LoginState extends State<Login> {
                 height: 50,
               ),
               TextFieldAuth(
-                controller: controladorContrasenya,
+                controller: _controllerContrasenya,
                 obscureText: true,
                 labelText: "Contraseña",
               ),
@@ -109,25 +133,7 @@ class _LoginState extends State<Login> {
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(150, 50),
                     ),
-                    onPressed: () async {
-                      try {
-                        // Autenticar al usuario utilizando Firebase
-                        await FirebaseAuth.instance.signInWithEmailAndPassword(
-                          email: controladorEmail.text,
-                          password: controladorContrasenya.text,
-                        );
-                        // Navegar a la página de inicio después del inicio de sesión exitoso
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PaginaInici(),
-                          ),
-                        );
-                      } catch (e) {
-                        print('Error al iniciar sesión: $e');
-                        // Manejar el error de inicio de sesión
-                      }
-                    },
+                    onPressed: () => _ferLogin(context),
                     child: const Text("Entrar"),
                   ),
                 ],

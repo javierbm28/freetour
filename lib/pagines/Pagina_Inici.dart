@@ -11,9 +11,16 @@ class PaginaInici extends StatefulWidget {
 }
 
 class _PaginaIniciState extends State<PaginaInici> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  void logout() async {
+    await _auth.signOut();
+    Navigator.pop(context); // Regresa a la pantalla anterior después de cerrar sesión
+  }
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     final String userName = user != null ? user.displayName ?? 'Usuario' : 'Invitado';
 
     return Scaffold(
@@ -21,6 +28,12 @@ class _PaginaIniciState extends State<PaginaInici> {
       appBar: AppBar(
         title: const Text("Discovery Tour"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        actions: [
+          IconButton(
+            onPressed: logout,
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -28,15 +41,14 @@ class _PaginaIniciState extends State<PaginaInici> {
             const SizedBox(
               height: 100,
             ),
-
             FutureBuilder<DocumentSnapshot>(
               future: FirebaseFirestore.instance.collection('users').doc(user!.uid).get(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator(); // Muestra un indicador de carga mientras se obtiene la información
+                  return CircularProgressIndicator();
                 }
                 if (snapshot.hasError) {
-                  return Text('Error al obtener los datos'); // Muestra un mensaje de error si hay un problema
+                  return Text('Error al obtener los datos');
                 }
                 final data = snapshot.data!.data() as Map<String, dynamic>;
                 final String nombre = data['nombre'] ?? '';
@@ -44,35 +56,31 @@ class _PaginaIniciState extends State<PaginaInici> {
                 return Text(
                   "Hola, $nombre $apellidos",
                   style: const TextStyle(
-                    fontSize: 50, 
+                    fontSize: 50,
                     fontWeight: FontWeight.bold,
                   ),
                 );
               },
             ),
-
             const SizedBox(
               height: 50,
             ),
-
-            const Text("Ganas de explorar y conocer sitios nuevos?",
+            const Text(
+              "Ganas de explorar y conocer sitios nuevos?",
               style: TextStyle(
-                fontSize: 40, 
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(
               height: 50,
             ),
             Center(
               child: Image.asset('assets/foto.jfif'),
             ),
-
             const SizedBox(
               height: 100,
             ),
-
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 63, 214, 63),
