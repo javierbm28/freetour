@@ -69,28 +69,21 @@ class _LoginState extends State<Login> {
                   color: Color.fromARGB(255, 63, 214, 63),
                 ),
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              const SizedBox(height: 50),
               TextFieldAuth(
                 controller: _controllerEmail,
                 obscureText: false,
                 labelText: "Email",
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              const SizedBox(height: 20),
               TextFieldAuth(
                 controller: _controllerContrasenya,
                 obscureText: true,
                 labelText: "Contraseña",
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: () {
-                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -106,41 +99,20 @@ class _LoginState extends State<Login> {
                   ),
                 ),
               ),
-              const SizedBox(
-                height: 50,
-              ),
-              SingleChildScrollView(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    BotoAuth(
-                        text: "Registrarse",
-                        onTap: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const Registro()),
-                          );
-                        }),
-                    BotoAuth(
-                      text: "Entrar",
-                      onTap: () => ferLogin(context),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  BotoAuth(
+                    text: "Registrarse",
+                    onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => Registro(alFerClic: widget.alFerClic),
-                        ),
+                        MaterialPageRoute(builder: (context) => Registro(alFerClic: widget.alFerClic)),
                       );
                     },
-                    child: const Text("Registrate"),
                   ),
-                  const SizedBox(
-                    width: 100,
-                  ),
+                  const SizedBox(width: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       fixedSize: const Size(150, 50),
@@ -149,7 +121,7 @@ class _LoginState extends State<Login> {
                     child: const Text("Entrar"),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),
