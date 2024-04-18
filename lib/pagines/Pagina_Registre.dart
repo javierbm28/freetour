@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,7 +17,10 @@ class _RegistroState extends State<Registro> {
   TextEditingController controladorContrasenya = TextEditingController();
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorApellidos = TextEditingController();
-  bool _formFilled = false;
+
+  void ferRegistre(BuildContext buildContext) async{
+
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +43,7 @@ class _RegistroState extends State<Registro> {
                   "Registro",
                   style: GoogleFonts.aBeeZee(
                     textStyle: const TextStyle(
-                      fontSize: 70,
+                      fontSize: 50,
                       fontWeight: FontWeight.bold,
                       color: Color.fromARGB(255, 63, 214, 63),
                     ),
@@ -116,22 +120,12 @@ class _RegistroState extends State<Registro> {
                     const SizedBox(
                       height: 200,
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(150, 50),
-                      ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const Login(),
-                          ),
-                        );
-                      },
-                      child: const Text("Crear cuenta"),
+
+                    BotoAuth(
+                      text: "Registrate", 
+                      onTap: () => ferRegistre(context),
                     ),
-                    
+
                   ],
                 )
               ],
