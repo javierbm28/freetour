@@ -1,28 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
+import 'package:freetour/auth/servei_auth.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
 import 'package:freetour/pagines/Pagina_Recuperacio.dart';
 import 'package:freetour/pagines/Pagina_Registre.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class Login extends StatefulWidget {
-  const Login({super.key});
+  final void Function() alFerClic;
+
+  const Login({
+    Key? key,
+    required this.alFerClic,
+  }) : super(key: key);
 
   @override
   State<Login> createState() => _LoginState();
 }
 
 class _LoginState extends State<Login> {
-  TextEditingController controladorEmail = TextEditingController();
-  TextEditingController controladorContrasenya = TextEditingController();
+  final TextEditingController _controllerEmail = TextEditingController();
+  final TextEditingController _controllerContrasenya = TextEditingController();
+  final ServeiAuth _serveiAuth = ServeiAuth();
 
-  void ferLogin(BuildContext buildContext) async {
-    Navigator.pop(context);
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PaginaInici()),
-    );
+  void _ferLogin(BuildContext context) async {
+    try {
+      await _serveiAuth.loginAmbEmailIPassword(
+        _controllerEmail.text,
+        _controllerContrasenya.text,
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PaginaInici(),
+        ),
+      );
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Error"),
+          content: Text(e.toString()),
+        ),
+      );
+    }
   }
 
   @override
@@ -40,21 +61,19 @@ class _LoginState extends State<Login> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 "Login",
-                style: GoogleFonts.aBeeZee(
-                  textStyle: const TextStyle(
-                    fontSize: 50,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 63, 214, 63),
-                  ),
+                style: TextStyle(
+                  fontSize: 70,
+                  fontWeight: FontWeight.bold,
+                  color: Color.fromARGB(255, 63, 214, 63),
                 ),
               ),
               const SizedBox(
                 height: 50,
               ),
               TextFieldAuth(
-                controller: controladorEmail,
+                controller: _controllerEmail,
                 obscureText: false,
                 labelText: "Email",
               ),
@@ -62,7 +81,7 @@ class _LoginState extends State<Login> {
                 height: 50,
               ),
               TextFieldAuth(
-                controller: controladorContrasenya,
+                controller: _controllerContrasenya,
                 obscureText: true,
                 labelText: "Contraseña",
               ),
@@ -75,7 +94,8 @@ class _LoginState extends State<Login> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const RecuperarContrasenya()),
+                      builder: (context) => const RecuperarContrasenya(),
+                    ),
                   );
                 },
                 child: const Text(
@@ -107,8 +127,28 @@ class _LoginState extends State<Login> {
                       text: "Entrar",
                       onTap: () => ferLogin(context),
                     ),
-                  ],
-                ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Registro(alFerClic: widget.alFerClic),
+                        ),
+                      );
+                    },
+                    child: const Text("Registrate"),
+                  ),
+                  const SizedBox(
+                    width: 100,
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: const Size(150, 50),
+                    ),
+                    onPressed: () => _ferLogin(context),
+                    child: const Text("Entrar"),
+                  ),
+                ],
               )
             ],
           ),
