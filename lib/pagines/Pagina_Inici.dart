@@ -16,13 +16,15 @@ class _PaginaIniciState extends State<PaginaInici> {
 
   void logout() async {
     await _auth.signOut();
-    Navigator.pop(context); // Regresa a la pantalla anterior después de cerrar sesión
+    Navigator.pop(
+        context); // Regresa a la pantalla anterior después de cerrar sesión
   }
 
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
-    final String userName = user != null ? user.displayName ?? 'Usuario' : 'Invitado';
+    final String userName =
+        user != null ? user.displayName ?? 'Usuario' : 'Invitado';
 
     return Scaffold(
       appBar: AppBar(
@@ -46,7 +48,10 @@ class _PaginaIniciState extends State<PaginaInici> {
           child: Column(
             children: [
               FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(user!.uid).get(),
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .get(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircularProgressIndicator();
@@ -58,46 +63,32 @@ class _PaginaIniciState extends State<PaginaInici> {
                   final String nombre = data['nombre'] ?? '';
                   final String apellidos = data['apellidos'] ?? '';
                   return Text(
-                    "Hola, $nombre $apellidos",
+                    "$nombre $apellidos",
                     style: const TextStyle(
-                      fontSize: 50,
+                      fontSize: 60,
                       fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   );
                 },
               ),
-              const SizedBox(
-                height: 50,
-              ),
+
+              const SizedBox(height: 30,),
+
               const Text(
-                "Ganas de explorar y conocer sitios nuevos?",
+                "Bienvenido/a",
                 style: TextStyle(
-                  fontSize: 40,
+                  fontSize: 60,
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(
-                height: 50,
+                height: 400,
               ),
-              Center(
-                child: Image.asset('assets/foto.jfif'),
-              ),
-              const SizedBox(
-                height: 100,
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 63, 214, 63),
-                  padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
-                  minimumSize: const Size(500, 100),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                    fontSize: 50,
-                  ),
-                  fixedSize: const Size(150, 50),
-                ),
-                onPressed: () {
+              BotoAuth(
+                text: "Ir a mapa",
+                onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -105,7 +96,6 @@ class _PaginaIniciState extends State<PaginaInici> {
                     ),
                   );
                 },
-                child: const Text("Ir a mapa"),
               ),
             ],
           ),
@@ -114,5 +104,3 @@ class _PaginaIniciState extends State<PaginaInici> {
     );
   }
 }
-
-

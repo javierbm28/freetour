@@ -113,12 +113,10 @@ class _LoginState extends State<Login> {
                     },
                   ),
                   const SizedBox(width: 20),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: const Size(150, 50),
-                    ),
-                    onPressed: () => _ferLogin(context),
-                    child: const Text("Entrar"),
+
+                  BotoAuth(
+                    text: "Entrar", 
+                    onTap: () => _ferLogin(context),
                   ),
                 ],
               ),

@@ -44,8 +44,10 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                 labelText: "Email",
               ),
               const SizedBox(height: 100,),
-              ElevatedButton(
-                onPressed: () async {
+
+              BotoAuth(
+                text: "Recuperar contraseña", 
+                onTap: () async {
                   try {
                     // Enviar correo para restablecer la contraseña
                     await FirebaseAuth.instance.sendPasswordResetEmail(
@@ -90,7 +92,6 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                     );
                   }
                 },
-                child: const Text("Recuperar contraseña"),
               ),
             ],
           ),
