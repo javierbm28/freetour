@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:freetour/pagines/Pagina_Inici.dart';
 
 class EditarDades extends StatefulWidget {
   const EditarDades({Key? key});
@@ -54,6 +55,13 @@ class _EditarDadesState extends State<EditarDades> {
         ),
       );
     });
+
+    Navigator.push(
+        context, 
+        MaterialPageRoute(
+          builder: (context) => const PaginaInici(),
+        ),
+    );
   }
 
   @override
