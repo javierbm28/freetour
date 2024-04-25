@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
+import 'package:freetour/pagines/MostrarDatos.dart';
 import 'package:freetour/pagines/Pagina_Mapa.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freetour/pagines/Pagina_editar_dades.dart';
 
 class PaginaInici extends StatefulWidget {
   const PaginaInici({Key? key}) : super(key: key);
@@ -31,6 +33,18 @@ class _PaginaIniciState extends State<PaginaInici> {
         title: const Text("Discovery Tour"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Datos(),
+                    ),
+                  );
+            }, 
+            icon: const Icon(Icons.person),
+          ),
           IconButton(
             onPressed: logout,
             icon: const Icon(Icons.logout),
@@ -63,7 +77,7 @@ class _PaginaIniciState extends State<PaginaInici> {
                   final String nombre = data['nombre'] ?? '';
                   final String apellidos = data['apellidos'] ?? '';
                   return Text(
-                    "$nombre $apellidos",
+                    "  $nombre $apellidos  ",
                     style: const TextStyle(
                       fontSize: 60,
                       fontWeight: FontWeight.bold,
