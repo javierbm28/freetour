@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/MostrarDatos.dart';
+import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:freetour/pagines/Pagina_Mapa.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/pagines/Pagina_editar_dades.dart';
 
 class PaginaInici extends StatefulWidget {
-  const PaginaInici({Key? key}) : super(key: key);
+  
+  const PaginaInici({
+    Key? key,})
+   : super(key: key);
 
   @override
   State<PaginaInici> createState() => _PaginaIniciState();
@@ -18,8 +22,12 @@ class _PaginaIniciState extends State<PaginaInici> {
 
   void logout() async {
     await _auth.signOut();
-    Navigator.pop(
-        context); // Regresa a la pantalla anterior después de cerrar sesión
+    Navigator.push(
+        context, 
+        MaterialPageRoute(
+          builder: (context) => const Login(),
+        ),
+    ); // Regresa a la pantalla anterior después de cerrar sesión
   }
 
   @override
