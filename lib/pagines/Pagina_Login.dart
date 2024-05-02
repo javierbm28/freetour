@@ -6,11 +6,11 @@ import 'package:freetour/pagines/Pagina_Recuperacio.dart';
 import 'package:freetour/pagines/Pagina_Registre.dart';
 
 class Login extends StatefulWidget {
-  final void Function() alFerClic;
+  final void Function()? alFerClic;
 
   const Login({
     Key? key,
-    required this.alFerClic,
+    this.alFerClic,
   }) : super(key: key);
 
   @override
@@ -120,7 +120,7 @@ class _LoginState extends State<Login> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => Registro(alFerClic: widget.alFerClic),
+                          builder: (context) => Registro(alFerClic: widget.alFerClic!),
                         ),
                       );
                     },

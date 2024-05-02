@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:freetour/pagines/MapScreen.dart';
+import 'package:freetour/pagines/FilterableMap.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freetour/pagines/Pagina_Login.dart';
 
 class PaginaInici extends StatefulWidget {
   const PaginaInici({Key? key}) : super(key: key);
@@ -15,7 +16,9 @@ class _PaginaIniciState extends State<PaginaInici> {
 
   void logout() async {
     await _auth.signOut();
-    Navigator.pop(context); // Regresa a la pantalla anterior después de cerrar sesión
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context)=> const Login())); // Regresa a la pantalla anterior después de cerrar sesión
   }
 
   @override
@@ -97,7 +100,7 @@ class _PaginaIniciState extends State<PaginaInici> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MapScreen(),
+                    builder: (context) => FilterableMap(),
                   ),
                 );
               },
