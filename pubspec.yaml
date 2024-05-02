@@ -67,6 +67,8 @@ flutter:
 
   assets:
     - assets/foto.jfif
+    - lib/images/IconUser.png
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:

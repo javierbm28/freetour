@@ -1,8 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
-import 'dart:ui';
-import 'dart:math';
+import 'package:geolocator/geolocator.dart';
+import 'dart:typed_data';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:async';
+import 'dart:ui'; 
+import 'dart:math'; 
 
 enum PlaceType {
   restaurant,
@@ -18,8 +22,7 @@ class FilterableMap extends StatefulWidget {
 
 class _FilterableMapState extends State<FilterableMap> {
   MapboxMapController? mapController;
-  final LatLng center =
-      const LatLng(40.730610, -73.935242);
+  final LatLng defaultCenter = const LatLng(41.3851, 2.1734); // Barcelona coordinates
 
   Map<PlaceType, bool> filters = {
     PlaceType.restaurant: false,
@@ -28,36 +31,75 @@ class _FilterableMapState extends State<FilterableMap> {
     PlaceType.bar: false,
   };
 
-  void _onMapCreated(MapboxMapController controller) {
+  DateTime? lastTap;
+
+  @override
+  void initState() {
+    super.initState();
+    _determinePosition();
+  }
+
+  void _onMapCreated(MapboxMapController controller) async {
     mapController = controller;
-    // Aquí puedes asegurarte de que el accessToken se establece correctamente.
+    await _loadImageFromAssets();
   }
 
-  // Modifica esta función para aceptar ambos parámetros
-  void _onMapClicked(Point<double> point, LatLng latLng) async {
-    // Puedes decidir si utilizar el `Point<double>` dependiendo de tus necesidades
-    _addNewLocation(latLng);
+  Future<void> _loadImageFromAssets() async {
+    final ByteData bytes = await rootBundle.load('lib/images/IconUser.png');
+    final Uint8List list = bytes.buffer.asUint8List();
+    mapController!.addImage('icon-user', list);
   }
 
-  void _addNewLocation(LatLng latLng) async {
-    String name = "Nuevo Sitio";
-    PlaceType type = PlaceType.restaurant;
+  void _onMapClicked(Point<double> point, LatLng latLng) {
+    final DateTime now = DateTime.now();
+    if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
+      _showAddNewPlaceDialog(latLng);
+    } else {
+      lastTap = now;
+    }
+  }
 
-    Symbol symbol = await mapController!.addSymbol(SymbolOptions(
-      geometry: latLng,
-      iconImage: "custom-icon",
-      textField: name,
-      textOffset: Offset(0, -2),
-    ));
+  Future<void> _showAddNewPlaceDialog(LatLng latLng) async {
+    // Example implementation here
+  }
 
-    final docRef =
-        await FirebaseFirestore.instance.collection('locations').add({
-      'name': name,
-      'type': type.toString().split('.').last,
-      'coordinates': GeoPoint(latLng.latitude, latLng.longitude)
-    });
+  Future<void> _determinePosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
 
-    print("Ubicación guardada con ID: ${docRef.id}");
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      await _addUserLocationSymbol(defaultCenter); // Use default center if services are not enabled
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        await _addUserLocationSymbol(defaultCenter);
+        return;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      await _addUserLocationSymbol(defaultCenter);
+      return;
+    }
+
+    // Obtaining current location and adding a symbol on the map
+    Position position = await Geolocator.getCurrentPosition();
+    await _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
+  }
+
+  Future<void> _addUserLocationSymbol(LatLng latLng) async {
+    if (mapController != null) {
+      await mapController!.addSymbol(SymbolOptions(
+        geometry: latLng,
+        iconImage: 'icon-user',
+        iconSize: 0.1, // Fixed icon size regardless of zoom level
+      ));
+    }
   }
 
   void _toggleFilter(PlaceType type) {
@@ -70,52 +112,49 @@ class _FilterableMapState extends State<FilterableMap> {
   void _updateMap() {
     mapController?.clearSymbols();
     FirebaseFirestore.instance
-        .collection('locations')
-        .where('type',
-            isEqualTo: filters.entries
-                .where((entry) => entry.value)
-                .map((entry) => entry.key.toString().split('.').last)
-                .join(','))
-        .get()
-        .then((querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        GeoPoint geoPoint = doc['coordinates'];
-        mapController?.addSymbol(SymbolOptions(
-            geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-            iconImage: "${doc['type']}-icon"));
-      }
-    });
+      .collection('locations')
+      .where('type',
+          isEqualTo: filters.entries
+              .where((entry) => entry.value)
+              .map((entry) => entry.key.toString().split('.').last)
+              .join(','))
+      .get()
+      .then((querySnapshot) {
+        for (var doc in querySnapshot.docs) {
+          GeoPoint geoPoint = doc['coordinates'];
+          mapController?.addSymbol(SymbolOptions(
+              geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+              iconImage: "${doc['type']}-icon"));
+        }
+      });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Expanded(
-          child: MapboxMap(
-            accessToken:
-                "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
-            onMapCreated: _onMapCreated,
-            initialCameraPosition: CameraPosition(target: center, zoom: 14),
-            onMapClick:
-                _onMapClicked, // Pasa la función con ambos parámetros aquí
+    return Scaffold(
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: MapboxMap(
+              accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
+              onMapCreated: _onMapCreated,
+              initialCameraPosition: CameraPosition(target: defaultCenter, zoom: 14),
+              onMapClick: _onMapClicked,
+            ),
           ),
-        ),
-        Row(
-          children: PlaceType.values
-              .map((type) => Expanded(
-                    child: TextButton(
-                      onPressed: () => _toggleFilter(type),
-                      child: Text(type.toString().split('.').last),
-                      style: TextButton.styleFrom(
-                        backgroundColor:
-                            filters[type] ?? false ? Colors.blue : Colors.grey,
-                      ),
-                    ),
-                  ))
-              .toList(),
-        )
-      ],
+          Row(
+            children: PlaceType.values.map((type) => Expanded(
+              child: TextButton(
+                onPressed: () => _toggleFilter(type),
+                child: Text(type.toString().split('.').last),
+                style: TextButton.styleFrom(
+                  backgroundColor: filters[type] ?? false ? Colors.blue : Colors.grey,
+                ),
+              ),
+            )).toList(),
+          )
+        ],
+      ),
     );
   }
 }
