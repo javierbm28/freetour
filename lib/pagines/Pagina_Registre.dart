@@ -6,11 +6,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importar cloud_firestore
 
 class Registro extends StatefulWidget {
-  final void Function() alFerClic;
+  final void Function()? alFerClic;
 
   const Registro({
     Key? key,
-    required this.alFerClic,
+     this.alFerClic,
   }) : super(key: key);
 
   @override
