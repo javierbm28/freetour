@@ -37,6 +37,7 @@ class _FilterableMapState extends State<FilterableMap> {
   void initState() {
     super.initState();
     _determinePosition();
+    _loadPointerImage(); // Load the pointer image on initialization
   }
 
   void _onMapCreated(MapboxMapController controller) async {
@@ -50,10 +51,23 @@ class _FilterableMapState extends State<FilterableMap> {
     mapController!.addImage('icon-user', list);
   }
 
+  // Function to load the pointer image
+  Future<void> _loadPointerImage() async {
+    final ByteData bytes = await rootBundle.load('lib/images/Puntero.png');
+    final Uint8List list = bytes.buffer.asUint8List();
+    mapController!.addImage('puntero', list);
+  }
+
   void _onMapClicked(Point<double> point, LatLng latLng) {
     final DateTime now = DateTime.now();
     if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
-      _showAddNewPlaceDialog(latLng);
+      // Place the puntero image on double tap
+      mapController?.addSymbol(SymbolOptions(
+        geometry: latLng,
+        iconImage: 'puntero',
+        iconSize: 0.08, // Adjust size as needed
+      ));
+      lastTap = null; // Reset last tap
     } else {
       lastTap = now;
     }
@@ -87,8 +101,11 @@ class _FilterableMapState extends State<FilterableMap> {
       return;
     }
 
-    // Obtaining current location and adding a symbol on the map
-    Position position = await Geolocator.getCurrentPosition();
+    // Obtaining current location with high accuracy and a timeout
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.best,
+      timeLimit: Duration(seconds: 10)
+    );
     await _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
   }
 
