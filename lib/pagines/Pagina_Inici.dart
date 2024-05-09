@@ -1,11 +1,19 @@
+
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
+import 'package:freetour/pagines/MostrarDatos.dart';
+import 'package:freetour/pagines/Pagina_Login.dart';
+import 'package:freetour/pagines/Pagina_Mapa.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freetour/pagines/Pagina_editar_dades.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 
 class PaginaInici extends StatefulWidget {
-  const PaginaInici({Key? key}) : super(key: key);
+  const PaginaInici({
+    Key? key,
+  }) : super(key: key);
 
   @override
   State<PaginaInici> createState() => _PaginaIniciState();
@@ -18,20 +26,34 @@ class _PaginaIniciState extends State<PaginaInici> {
     await _auth.signOut();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context)=> const Login())); // Regresa a la pantalla anterior después de cerrar sesión
+      MaterialPageRoute(
+        builder: (context) => const Login(),
+      ),
+    ); // Regresa a la pantalla anterior después de cerrar sesión
   }
 
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
-    final String userName = user != null ? user.displayName ?? 'Usuario' : 'Invitado';
+    final String userName =
+        user != null ? user.displayName ?? 'Usuario' : 'Invitado';
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 150, 212, 152),
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => Datos(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.person),
+          ),
           IconButton(
             onPressed: logout,
             icon: const Icon(Icons.logout),
@@ -39,80 +61,75 @@ class _PaginaIniciState extends State<PaginaInici> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(
-              height: 100,
+        child: Padding(
+          padding: const EdgeInsets.all(0.0),
+          child: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage("assets/foto_fondo.jpg"),
+                fit: BoxFit.cover,
+              ),
             ),
-            FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance.collection('users').doc(user!.uid).get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return Text('Error al obtener los datos');
-                }
-                final data = snapshot.data!.data() as Map<String, dynamic>;
-                final String nombre = data['nombre'] ?? '';
-                final String apellidos = data['apellidos'] ?? '';
-                return Text(
-                  "Hola, $nombre $apellidos",
-                  style: const TextStyle(
+            child: Column(
+              children: [
+                
+                FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user!.uid)
+                      .get(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return Text('Error al obtener los datos');
+                    }
+                    final data = snapshot.data!.data() as Map<String, dynamic>;
+                    final String nombre = data['nombre'] ?? '';
+                    final String apellidos = data['apellidos'] ?? '';
+                    return Center(
+                      child: Text(
+                        "$nombre $apellidos",
+                        style: const TextStyle(
+                          fontSize: 50,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(
+                  height: 30,
+                ),
+                const Text(
+                  "Bienvenido/a",
+                  style: TextStyle(
                     fontSize: 50,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                );
-              },
-            ),
-            const SizedBox(
-              height: 50,
-            ),
-            const Text(
-              "Ganas de explorar y conocer sitios nuevos?",
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(
-              height: 50,
-            ),
-            Center(
-              child: Image.asset('assets/foto.jfif'),
-            ),
-            const SizedBox(
-              height: 100,
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 63, 214, 63),
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 20),
-                minimumSize: const Size(500, 100),
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                  fontSize: 50,
                 ),
-                fixedSize: const Size(150, 50),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
+                const SizedBox(
+                  height: 245,
+                ),
+                BotoAuth(
+                  text: "Ir a mapa",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
                     builder: (context) => FilterableMap(),
-                  ),
-                );
-              },
-              child: const Text("Ir a mapa"),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-            const SizedBox(
-              height: 50,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-

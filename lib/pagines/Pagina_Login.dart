@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/auth/servei_auth.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
@@ -10,7 +11,7 @@ class Login extends StatefulWidget {
 
   const Login({
     Key? key,
-    this.alFerClic,
+     this.alFerClic,
   }) : super(key: key);
 
   @override
@@ -39,7 +40,7 @@ class _LoginState extends State<Login> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Error"),
-          content: Text(e.toString()),
+          content: Text("Error de credenciales"),
         ),
       );
     }
@@ -49,10 +50,10 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,
@@ -68,28 +69,21 @@ class _LoginState extends State<Login> {
                   color: Color.fromARGB(255, 63, 214, 63),
                 ),
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              const SizedBox(height: 50),
               TextFieldAuth(
                 controller: _controllerEmail,
                 obscureText: false,
                 labelText: "Email",
               ),
-              const SizedBox(
-                height: 50,
-              ),
+              const SizedBox(height: 20),
               TextFieldAuth(
                 controller: _controllerContrasenya,
                 obscureText: true,
                 labelText: "Contraseña",
               ),
-              const SizedBox(
-                height: 100,
-              ),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: () {
-                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -105,18 +99,13 @@ class _LoginState extends State<Login> {
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const SizedBox(
-                    height: 200,
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: const Size(150, 50),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
+                  BotoAuth(
+                    text: "Registrarse",
+                    onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -124,20 +113,15 @@ class _LoginState extends State<Login> {
                         ),
                       );
                     },
-                    child: const Text("Registrate"),
                   ),
-                  const SizedBox(
-                    width: 100,
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: const Size(150, 50),
-                    ),
-                    onPressed: () => _ferLogin(context),
-                    child: const Text("Entrar"),
+                  
+
+                  BotoAuth(
+                    text: "Entrar", 
+                    onTap: () => _ferLogin(context),
                   ),
                 ],
-              )
+              ),
             ],
           ),
         ),

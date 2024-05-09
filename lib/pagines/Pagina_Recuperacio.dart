@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Importar firebase_auth
@@ -17,21 +18,21 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(15),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Text(
                 "Recuperar Contraseña",
                 style: TextStyle(
-                  fontSize: 70,
+                  fontSize: 60,
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(255, 63, 214, 63),
                 ),
@@ -42,9 +43,16 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                 obscureText: false,
                 labelText: "Email",
               ),
-              const SizedBox(height: 100,),
-              ElevatedButton(
-                onPressed: () async {
+              const SizedBox(height: 50,),
+
+              const Icon(Icons.recommend),
+              Text("Recuerda apuntarte la nueva contraseña ;)"),
+
+              const SizedBox(height: 30,),
+
+              BotoAuth(
+                text: "Recuperar contraseña", 
+                onTap: () async {
                   try {
                     // Enviar correo para restablecer la contraseña
                     await FirebaseAuth.instance.sendPasswordResetEmail(
@@ -75,7 +83,7 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: const Text("Error"),
-                          content: Text("Error al enviar el correo: $e"),
+                          content: Text("Error al enviar el correo"),
                           actions: <Widget>[
                             ElevatedButton(
                               onPressed: () {
@@ -89,7 +97,6 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                     );
                   }
                 },
-                child: const Text("Recuperar contraseña"),
               ),
             ],
           ),

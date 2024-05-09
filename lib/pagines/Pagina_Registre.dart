@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_auth/firebase_auth.dart'; 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Importar cloud_firestore
 
 class Registro extends StatefulWidget {
-  final void Function() alFerClic;
+  final void Function()? alFerClic;
 
   const Registro({
     Key? key,
-    required this.alFerClic,
+     this.alFerClic,
   }) : super(key: key);
 
   @override
@@ -23,16 +23,17 @@ class _RegistroState extends State<Registro> {
   TextEditingController controladorContrasenya = TextEditingController();
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorApellidos = TextEditingController();
-  bool _formFilled = false;
+
+  void ferRegistre(BuildContext buildContext) async {}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,
@@ -42,68 +43,57 @@ class _RegistroState extends State<Registro> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "Registro",
-                  style: GoogleFonts.aBeeZee(
-                    textStyle: const TextStyle(
-                      fontSize: 70,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 63, 214, 63),
-                    ),
+                  style: TextStyle(
+                    fontSize: 50,
+                    fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 63, 214, 63),
                   ),
                 ),
-            
                 const SizedBox(
                   height: 50,
                 ),
-            
                 TextFieldAuth(
                   controller: controladorNombre,
                   obscureText: false,
                   labelText: "Nombre",
                 ),
-            
                 const SizedBox(
                   height: 50,
                 ),
-            
                 TextFieldAuth(
                   controller: controladorApellidos,
                   obscureText: false,
                   labelText: "Apellidos",
                 ),
-            
                 const SizedBox(
                   height: 50,
                 ),
-            
                 TextFieldAuth(
                   controller: controladorEmail,
                   obscureText: false,
                   labelText: "Email",
                 ),
-            
                 const SizedBox(
                   height: 50,
                 ),
-            
                 TextFieldAuth(
                   controller: controladorContrasenya,
                   obscureText: true,
                   labelText: "Contraseña",
                 ),
-            
                 const SizedBox(
                   height: 100,
                 ),
-            
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => Login(alFerClic: widget.alFerClic),
+                        builder: (context) =>
+                            Login(alFerClic: widget.alFerClic),
                       ),
                     );
                   },
@@ -115,22 +105,20 @@ class _RegistroState extends State<Registro> {
                     ),
                   ),
                 ),
-            
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(
                       height: 200,
                     ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: const Size(150, 50),
-                      ),
-                      onPressed: () async {
+                    BotoAuth(
+                      text: "Crear cuenta",
+                      onTap: () async {
                         try {
                           // Registrar al usuario utilizando Firebase
                           final UserCredential userCredential =
-                              await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                              await FirebaseAuth.instance
+                                  .createUserWithEmailAndPassword(
                             email: controladorEmail.text,
                             password: controladorContrasenya.text,
                           );
@@ -139,7 +127,10 @@ class _RegistroState extends State<Registro> {
                           final String userId = userCredential.user!.uid;
 
                           // Guardar el nombre y el apellido en Firestore Database
-                          await FirebaseFirestore.instance.collection('users').doc(userId).set({
+                          await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(userId)
+                              .set({
                             'nombre': controladorNombre.text,
                             'apellidos': controladorApellidos.text,
                           });
@@ -148,7 +139,8 @@ class _RegistroState extends State<Registro> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => Login(alFerClic: widget.alFerClic),
+                              builder: (context) =>
+                                  Login(alFerClic: widget.alFerClic),
                             ),
                           );
                         } catch (e) {
@@ -156,7 +148,6 @@ class _RegistroState extends State<Registro> {
                           // Manejar el error de registro de usuario
                         }
                       },
-                      child: const Text("Crear cuenta"),
                     ),
                   ],
                 )
