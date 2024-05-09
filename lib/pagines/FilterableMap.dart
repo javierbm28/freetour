@@ -40,19 +40,20 @@ class _FilterableMapState extends State<FilterableMap> {
   void initState() {
     super.initState();
     _determinePosition();
-    _loadPointerImage(); // Load the pointer image on initialization
+    _loadPointerImage();
+  }
+
+  void _onMapCreated(MapboxMapController controller) {
+    mapController = controller;
+    _loadImageFromAssets();
+    _loadPointerImage(); 
   }
 
   void _toggleFilter(PlaceType type) {
     setState(() {
       filters[type] = !filters[type]!;
-      _updateMap(); // Si necesitas actualizar el mapa después de cambiar el filtro
+      _updateMap();
     });
-  }
-
-  void _onMapCreated(MapboxMapController controller) async {
-    mapController = controller;
-    await _loadImageFromAssets();
   }
 
   Future<void> _loadImageFromAssets() async {
@@ -61,10 +62,18 @@ class _FilterableMapState extends State<FilterableMap> {
     mapController!.addImage('icon-user', list);
   }
 
+  void _onStyleLoaded() {
+    _loadSavedLocations();
+  }
+
   Future<void> _loadPointerImage() async {
-    final ByteData bytes = await rootBundle.load('lib/images/Puntero.png');
-    final Uint8List list = bytes.buffer.asUint8List();
-    mapController!.addImage('puntero', list);
+    try {
+      final ByteData bytes = await rootBundle.load('lib/images/Puntero.png');
+      final Uint8List list = bytes.buffer.asUint8List();
+      await mapController!.addImage('puntero', list);
+    } catch (e) {
+      print('Error loading pointer image: $e');
+    }
   }
 
   DateTime? lastTap;
@@ -75,11 +84,10 @@ class _FilterableMapState extends State<FilterableMap> {
       lastAddedSymbol = await mapController?.addSymbol(SymbolOptions(
         geometry: latLng,
         iconImage: 'puntero',
-        iconSize: 0.08, // Adjust size as needed
+        iconSize: 0.08,
       ));
       _showAddNewPlaceDialog(latLng);
-      lastTap = null; // Reset last tap
-    } else {
+      lastTap = null;
       lastTap = now;
     }
   }
@@ -87,7 +95,7 @@ class _FilterableMapState extends State<FilterableMap> {
   void _updateMap() {
     if (mapController == null) return;
 
-    mapController!.clearSymbols(); // Limpia todos los símbolos existentes
+    mapController!.clearSymbols();
     FirebaseFirestore.instance
         .collection('locations')
         .where('type',
@@ -102,6 +110,25 @@ class _FilterableMapState extends State<FilterableMap> {
         mapController!.addSymbol(SymbolOptions(
             geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
             iconImage: "${doc['type']}-icon"));
+      }
+    });
+  }
+
+  Future<void> _loadSavedLocations() async {
+    if (mapController == null) return;
+
+    FirebaseFirestore.instance
+        .collection('locations')
+        .get()
+        .then((querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        GeoPoint geoPoint = doc.data()['coordinates'];
+        mapController!.addSymbol(SymbolOptions(
+          geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+          iconImage:
+              'puntero', // Asegúrate de que este icono está cargado en el mapa
+          iconSize: 0.08,
+        ));
       }
     });
   }
@@ -224,6 +251,7 @@ class _FilterableMapState extends State<FilterableMap> {
               onMapCreated: _onMapCreated,
               initialCameraPosition:
                   CameraPosition(target: defaultCenter, zoom: 14),
+              onStyleLoadedCallback: _onStyleLoaded,
               onMapClick: _onMapClicked,
             ),
           ),
