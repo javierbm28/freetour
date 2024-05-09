@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
 
 class EditarDades extends StatefulWidget {
@@ -110,10 +111,15 @@ class _EditarDadesState extends State<EditarDades> {
 
           const SizedBox(height: 20),
           
-          ElevatedButton(
-            onPressed: guardarCambios,
-            child: const Text('Guardar cambios'),
-          ),
+          BotoAuth(
+            text: "Guardar Cambios", 
+            onTap: guardarCambios,
+            )
+
+          //ElevatedButton(
+            //onPressed: guardarCambios,
+            //child: const Text('Guardar cambios'),
+          //),
         ],
       ),
     );

@@ -53,7 +53,7 @@ class _LoginState extends State<Login> {
         title: const Text("Discovery Tour"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(98, 199, 202, 198),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,
@@ -112,7 +112,7 @@ class _LoginState extends State<Login> {
                       );
                     },
                   ),
-                  const SizedBox(width: 20),
+                  
 
                   BotoAuth(
                     text: "Entrar", 

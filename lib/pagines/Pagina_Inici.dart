@@ -59,72 +59,70 @@ class _PaginaIniciState extends State<PaginaInici> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/foto_fondo.jpg"),
-                fit: BoxFit.cover,
+      body: Padding(
+        padding: const EdgeInsets.all(0.0),
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/foto_fondo.jpg"),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Column(
+            children: [
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user!.uid)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Error al obtener los datos');
+                  }
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  final String nombre = data['nombre'] ?? '';
+                  final String apellidos = data['apellidos'] ?? '';
+                  return Center(
+                    child: Text(
+                      "$nombre $apellidos",
+                      style: const TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-            child: Column(
-              children: [
-                FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user!.uid)
-                      .get(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
-                    }
-                    if (snapshot.hasError) {
-                      return Text('Error al obtener los datos');
-                    }
-                    final data = snapshot.data!.data() as Map<String, dynamic>;
-                    final String nombre = data['nombre'] ?? '';
-                    final String apellidos = data['apellidos'] ?? '';
-                    return Center(
-                      child: Text(
-                        "$nombre $apellidos",
-                        style: const TextStyle(
-                          fontSize: 60,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    );
-                  },
+        
+              const SizedBox(height: 30,),
+        
+              const Text(
+                "Bienvenido/a",
+                style: TextStyle(
+                  fontSize: 50,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-          
-                const SizedBox(height: 30,),
-          
-                const Text(
-                  "Bienvenido/a",
-                  style: TextStyle(
-                    fontSize: 60,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(
-                  height: 400,
-                ),
-                BotoAuth(
-                  text: "Ir a mapa",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MapaFreeTour(),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(
+                height: 245,
+              ),
+              BotoAuth(
+                text: "Ir a mapa",
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MapaFreeTour(),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),

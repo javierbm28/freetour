@@ -20,8 +20,8 @@ class BotoAuth extends StatelessWidget {
           color: Color.fromARGB(255, 130, 243, 78),
         ),
         padding: const EdgeInsets.symmetric(
-          horizontal: 25, 
-          vertical: 25,
+          horizontal: 10, 
+          vertical: 10,
         ),
         margin: const EdgeInsets.all(25),
         child: Text(

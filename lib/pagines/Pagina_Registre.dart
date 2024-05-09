@@ -33,7 +33,7 @@ class _RegistroState extends State<Registro> {
         title: const Text("Discovery Tour"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,

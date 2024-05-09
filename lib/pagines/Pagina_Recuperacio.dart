@@ -21,7 +21,7 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
         title: const Text("Discovery Tour"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: const Color.fromARGB(99, 141, 145, 140),
+      backgroundColor: Colors.white,
       body: SingleChildScrollView(
         child: Container(
           width: double.infinity,
@@ -32,7 +32,7 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
               const Text(
                 "Recuperar Contraseña",
                 style: TextStyle(
-                  fontSize: 70,
+                  fontSize: 60,
                   fontWeight: FontWeight.bold,
                   color: Color.fromARGB(255, 63, 214, 63),
                 ),
@@ -43,7 +43,12 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                 obscureText: false,
                 labelText: "Email",
               ),
-              const SizedBox(height: 100,),
+              const SizedBox(height: 50,),
+
+              const Icon(Icons.recommend),
+              Text("Recuerda apuntarte la nueva contraseña ;)"),
+
+              const SizedBox(height: 30,),
 
               BotoAuth(
                 text: "Recuperar contraseña", 
