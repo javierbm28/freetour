@@ -77,19 +77,28 @@ class _FilterableMapState extends State<FilterableMap> {
 
   DateTime? lastTap;
   void _onMapClicked(Point<double> point, LatLng latLng) async {
-    final DateTime now = DateTime.now();
-    if (lastTap != null &&
-        now.difference(lastTap!) < Duration(milliseconds: 500)) {
-      lastAddedSymbol = await mapController?.addSymbol(SymbolOptions(
-        geometry: latLng,
-        iconImage: 'puntero',
-        iconSize: 0.08,
-      ));
-      _showAddNewPlaceDialog(latLng);
-      lastTap = null;
-      lastTap = now;
+  final DateTime now = DateTime.now();
+  if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
+    // Doble clic detectado
+    if (lastAddedSymbol != null) {
+      // Solo intentar remover el símbolo si aún es parte del controlador
+      var currentSymbols = await mapController?.symbols;
+      if (currentSymbols?.contains(lastAddedSymbol) ?? false) {
+        await mapController?.removeSymbol(lastAddedSymbol!);
+      }
     }
+    lastAddedSymbol = await mapController?.addSymbol(SymbolOptions(
+      geometry: latLng,
+      iconImage: 'puntero',
+      iconSize: 0.08,
+    ));
+    _showAddNewPlaceDialog(latLng);
+    lastTap = null;  
+  } else {
+    lastTap = now;  
   }
+}
+
 
   void _updateMap() {
     if (mapController == null) return;
