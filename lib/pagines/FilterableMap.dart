@@ -29,8 +29,7 @@ class FilterableMap extends StatefulWidget {
 
 class _FilterableMapState extends State<FilterableMap> {
   MapboxMapController? mapController;
-  final LatLng defaultCenter =
-      const LatLng(41.3851, 2.1734); // Barcelona coordinates
+  final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
   Symbol? lastAddedSymbol;
 
   TextEditingController nameController = TextEditingController();
@@ -39,14 +38,13 @@ class _FilterableMapState extends State<FilterableMap> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
     _loadPointerImage();
   }
 
   void _onMapCreated(MapboxMapController controller) {
     mapController = controller;
     _loadImageFromAssets();
-    _loadPointerImage(); 
+    _loadPointerImage();
   }
 
   void _toggleFilter(PlaceType type) {
@@ -64,6 +62,7 @@ class _FilterableMapState extends State<FilterableMap> {
 
   void _onStyleLoaded() {
     _loadSavedLocations();
+    _requestLocationPermission();
   }
 
   Future<void> _loadPointerImage() async {
@@ -198,36 +197,43 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 
-  Future<void> _determinePosition() async {
+  Future<void> _requestLocationPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
 
+    // Verificar si los servicios de ubicación están habilitados.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      await _addUserLocationSymbol(
-          defaultCenter); // Use defaultCenter if services are not enabled
-      return;
+      return; // Retorna si los servicios no están habilitados.
     }
 
+    // Solicitar permiso de ubicación.
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        await _addUserLocationSymbol(defaultCenter);
-        return;
-      }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      await _addUserLocationSymbol(defaultCenter);
-      return;
+      return; // Retorna si los permisos están permanentemente denegados.
     }
 
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.best,
-        timeLimit: Duration(seconds: 10));
-    await _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
+      _getCurrentLocation(); // Obtiene la ubicación actual si los permisos están concedidos.
+    }
   }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best);
+      _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
+    } catch (e) {
+      print("Failed to get current location: $e");
+    }
+  }
+
+  
 
   Future<void> _addUserLocationSymbol(LatLng latLng) async {
     if (mapController != null) {
