@@ -18,7 +18,7 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
       backgroundColor: Colors.white,
@@ -83,7 +83,7 @@ class _RecuperarContrasenyaState extends State<RecuperarContrasenya> {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: const Text("Error"),
-                          content: Text("Error al enviar el correo: $e"),
+                          content: Text("Error al enviar el correo"),
                           actions: <Widget>[
                             ElevatedButton(
                               onPressed: () {

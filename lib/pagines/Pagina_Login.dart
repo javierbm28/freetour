@@ -40,7 +40,7 @@ class _LoginState extends State<Login> {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text("Error"),
-          content: Text(e.toString()),
+          content: Text("Error de credenciales"),
         ),
       );
     }
@@ -50,7 +50,7 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
       backgroundColor: Colors.white,

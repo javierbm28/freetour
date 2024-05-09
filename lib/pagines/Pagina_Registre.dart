@@ -30,7 +30,7 @@ class _RegistroState extends State<Registro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Discovery Tour"),
+        title: const Text("Discovery"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
       backgroundColor: Colors.white,
