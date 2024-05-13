@@ -2,25 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:freetour/pagines/CrearNuevaUbicacion.dart';
+import 'package:freetour/pagines/Filtros.dart';
+import 'package:freetour/pagines/CategoriasFiltros.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
-
-enum PlaceType {
-  restaurant,
-  monument,
-  nightclub,
-  bar,
-}
-
-Map<PlaceType, bool> filters = {
-  PlaceType.restaurant: false,
-  PlaceType.monument: false,
-  PlaceType.nightclub: false,
-  PlaceType.bar: false,
-};
 
 class FilterableMap extends StatefulWidget {
   @override
@@ -47,17 +36,10 @@ class _FilterableMapState extends State<FilterableMap> {
     _loadPointerImage();
   }
 
-  void _toggleFilter(PlaceType type) {
-    setState(() {
-      filters[type] = !filters[type]!;
-      _updateMap();
-    });
-  }
-
   Future<void> _loadImageFromAssets() async {
     final ByteData bytes = await rootBundle.load('lib/images/IconUser.png');
     final Uint8List list = bytes.buffer.asUint8List();
-    mapController!.addImage('icon-user', list);
+    await mapController!.addImage('icon-user', list);
   }
 
   void _onStyleLoaded() {
@@ -77,50 +59,45 @@ class _FilterableMapState extends State<FilterableMap> {
 
   DateTime? lastTap;
   void _onMapClicked(Point<double> point, LatLng latLng) async {
-  final DateTime now = DateTime.now();
-  if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
-    // Doble clic detectado
-    if (lastAddedSymbol != null) {
-      // Solo intentar remover el símbolo si aún es parte del controlador
-      var currentSymbols = await mapController?.symbols;
-      if (currentSymbols?.contains(lastAddedSymbol) ?? false) {
-        await mapController?.removeSymbol(lastAddedSymbol!);
+    final DateTime now = DateTime.now();
+    if (lastTap != null &&
+        now.difference(lastTap!) < Duration(milliseconds: 500)) {
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => CrearNuevaUbicacion(),
+      ));
+      lastTap = null;
+    } else {
+      lastTap = now;
+    }
+  }
+
+  void _updateMap() {
+  if (mapController == null) return;
+
+  mapController!.clearSymbols();
+  for (var category in categories) {
+    for (var subcategory in category.subcategories.entries) {
+      if (subcategory.value) { // Check if subcategory is visible
+        FirebaseFirestore.instance
+            .collection('locations')
+            .where('category', isEqualTo: category.name)
+            .where('subcategory', isEqualTo: subcategory.key)
+            .get()
+            .then((querySnapshot) {
+          for (var doc in querySnapshot.docs) {
+            GeoPoint geoPoint = doc['coordinates'];
+            mapController!.addSymbol(SymbolOptions(
+              geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+              iconImage: 'puntero',
+              iconSize: 0.08,
+            ));
+          }
+        });
       }
     }
-    lastAddedSymbol = await mapController?.addSymbol(SymbolOptions(
-      geometry: latLng,
-      iconImage: 'puntero',
-      iconSize: 0.08,
-    ));
-    _showAddNewPlaceDialog(latLng);
-    lastTap = null;  
-  } else {
-    lastTap = now;  
   }
 }
 
-
-  void _updateMap() {
-    if (mapController == null) return;
-
-    mapController!.clearSymbols();
-    FirebaseFirestore.instance
-        .collection('locations')
-        .where('type',
-            isEqualTo: filters.entries
-                .where((entry) => entry.value)
-                .map((entry) => entry.key.toString().split('.').last)
-                .join(','))
-        .get()
-        .then((querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        GeoPoint geoPoint = doc['coordinates'];
-        mapController!.addSymbol(SymbolOptions(
-            geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-            iconImage: "${doc['type']}-icon"));
-      }
-    });
-  }
 
   Future<void> _loadSavedLocations() async {
     if (mapController == null) return;
@@ -139,71 +116,6 @@ class _FilterableMapState extends State<FilterableMap> {
         ));
       }
     });
-  }
-
-  Future<void> _showAddNewPlaceDialog(LatLng latLng) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // User must tap button!
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Nueva Ubicación'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(hintText: "Nombre del lugar"),
-                ),
-                DropdownButton<String>(
-                  value: selectedType,
-                  hint: Text("Selecciona un tipo"),
-                  isExpanded: true,
-                  items: PlaceType.values.map((type) {
-                    return DropdownMenuItem<String>(
-                      value: type.toString().split('.').last,
-                      child: Text(type.toString().split('.').last),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedType = value;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancelar'),
-              onPressed: () {
-                if (lastAddedSymbol != null) {
-                  mapController?.removeSymbol(lastAddedSymbol!);
-                }
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Guardar Ubicación'),
-              onPressed: () {
-                if (nameController.text.isNotEmpty && selectedType != null) {
-                  FirebaseFirestore.instance.collection('locations').add({
-                    'name': nameController.text,
-                    'type': selectedType,
-                    'coordinates': GeoPoint(latLng.latitude, latLng.longitude)
-                  });
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("Todos los campos son obligatorios")));
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _requestLocationPermission() async {
@@ -242,8 +154,6 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  
-
   Future<void> _addUserLocationSymbol(LatLng latLng) async {
     if (mapController != null) {
       await mapController!.addSymbol(SymbolOptions(
@@ -270,22 +180,19 @@ class _FilterableMapState extends State<FilterableMap> {
               onMapClick: _onMapClicked,
             ),
           ),
-          Row(
-            children: PlaceType.values
-                .map((type) => Expanded(
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          backgroundColor: filters[type] ?? false
-                              ? Colors.blue
-                              : Colors.grey,
-                        ),
-                        onPressed: () => _toggleFilter(type),
-                        child: Text(type.toString().split('.').last),
-                      ),
-                    ))
-                .toList(),
-          )
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => Filtros(
+              onApplyFilters: (selectedCategories) {
+                // Lógica para aplicar filtros
+              },
+            ),
+          ),
+        ),
+        child: Icon(Icons.filter_list),
       ),
     );
   }

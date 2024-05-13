@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/MostrarDatos.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
-import 'package:freetour/pagines/Pagina_Mapa.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

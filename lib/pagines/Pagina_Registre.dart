@@ -3,14 +3,14 @@ import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Importar cloud_firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Registro extends StatefulWidget {
   final void Function()? alFerClic;
 
   const Registro({
     Key? key,
-     this.alFerClic,
+    this.alFerClic,
   }) : super(key: key);
 
   @override
@@ -23,8 +23,6 @@ class _RegistroState extends State<Registro> {
   TextEditingController controladorContrasenya = TextEditingController();
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorApellidos = TextEditingController();
-
-  void ferRegistre(BuildContext buildContext) async {}
 
   @override
   Widget build(BuildContext context) {
@@ -112,10 +110,9 @@ class _RegistroState extends State<Registro> {
                       height: 200,
                     ),
                     BotoAuth(
-                      text: "Crear cuenta",
+                      text: "Registrarse",
                       onTap: () async {
                         try {
-                          // Registrar al usuario utilizando Firebase
                           final UserCredential userCredential =
                               await FirebaseAuth.instance
                                   .createUserWithEmailAndPassword(
@@ -123,29 +120,46 @@ class _RegistroState extends State<Registro> {
                             password: controladorContrasenya.text,
                           );
 
-                          // Obtener el ID del usuario registrado
-                          final String userId = userCredential.user!.uid;
+                          final User? user = userCredential.user;
 
-                          // Guardar el nombre y el apellido en Firestore Database
-                          await FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(userId)
-                              .set({
-                            'nombre': controladorNombre.text,
-                            'apellidos': controladorApellidos.text,
-                          });
-
-                          // Navegar a la página de inicio después del registro exitoso
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  Login(alFerClic: widget.alFerClic),
+                          if (user != null) {
+                            await user.sendEmailVerification();
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text("Verifica tu correo electrónico"),
+                                content: Text(
+                                    "Hemos enviado un enlace de verificación a tu correo. Verifica tu correo antes de continuar."),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: Text("Ok"),
+                                  ),
+                                ],
+                              ),
+                            );
+                          } else {
+                            throw Exception(
+                                "No se pudo crear la cuenta del usuario.");
+                          }
+                        } catch (e) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: Text("Error en el registro"),
+                              content: Text(e.toString()),
+                              actions: <Widget>[
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: Text("Cerrar"),
+                                ),
+                              ],
                             ),
                           );
-                        } catch (e) {
-                          print('Error al registrar usuario: $e');
-                          // Manejar el error de registro de usuario
                         }
                       },
                     ),

@@ -43,6 +43,8 @@ dependencies:
   latlong2: ^0.8.1
   mapbox_gl: ^0.15.0
   flutter_mapbox_navigation: ^0.0.22
+  image_picker: ^1.0.7
+  firebase_storage: ^11.6.9
 
 dev_dependencies:
   flutter_test:
