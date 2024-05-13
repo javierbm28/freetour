@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/MostrarDatos.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
-import 'package:freetour/pagines/Pagina_Mapa.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -72,7 +71,7 @@ class _PaginaIniciState extends State<PaginaInici> {
             ),
             child: Column(
               children: [
-                
+                const SizedBox(height: 100,),
                 FutureBuilder<DocumentSnapshot>(
                   future: FirebaseFirestore.instance
                       .collection('users')
@@ -92,7 +91,7 @@ class _PaginaIniciState extends State<PaginaInici> {
                       child: Text(
                         "$nombre $apellidos",
                         style: const TextStyle(
-                          fontSize: 50,
+                          fontSize: 90,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -106,13 +105,13 @@ class _PaginaIniciState extends State<PaginaInici> {
                 const Text(
                   "Bienvenido/a",
                   style: TextStyle(
-                    fontSize: 50,
+                    fontSize: 90,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(
-                  height: 245,
+                  height: 416,
                 ),
                 BotoAuth(
                   text: "Ir a mapa",

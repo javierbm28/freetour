@@ -42,7 +42,7 @@ dependencies:
   geolocator: ^9.0.2
   latlong2: ^0.8.1
   mapbox_gl: ^0.15.0
-  flutter_mapbox_navigation: ^0.0.22
+  flutter_mapbox_navigation: ^0.0.26
 
 dev_dependencies:
   flutter_test:
