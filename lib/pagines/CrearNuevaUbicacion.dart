@@ -6,8 +6,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart' as cat;
 import 'package:flutter/foundation.dart'; // Importa foundation.dart para kIsWeb
+import 'package:mapbox_gl/mapbox_gl.dart';
 
 class CrearNuevaUbicacion extends StatefulWidget {
+  final LatLng latLng;
+  final Function(LatLng) onLocationSaved;
+
+  CrearNuevaUbicacion({required this.latLng, required this.onLocationSaved});
+
   @override
   _CrearNuevaUbicacionState createState() => _CrearNuevaUbicacionState();
 }
@@ -42,8 +48,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
                   _updateSubcategories(newValue);
                 });
               },
-              items: cat.categories
-                  .map<DropdownMenuItem<String>>((cat.Category category) {
+              items: cat.categories.map<DropdownMenuItem<String>>((cat.Category category) {
                 return DropdownMenuItem<String>(
                   value: category.name,
                   child: Text(category.name),
@@ -58,8 +63,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
                     _selectedSubcategory = newValue;
                   });
                 },
-                items: _subcategories
-                    .map<DropdownMenuItem<String>>((String subcategory) {
+                items: _subcategories.map<DropdownMenuItem<String>>((String subcategory) {
                   return DropdownMenuItem<String>(
                     value: subcategory,
                     child: Text(subcategory),
@@ -97,13 +101,12 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
   Future<void> _pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      setState(() {
-        if (kIsWeb) {
-          _imageBytes = File(pickedFile.path).readAsBytesSync();
-        } else {
-          _imageFile = File(pickedFile.path);
-        }
-      });
+      if (kIsWeb) {
+        _imageBytes = await pickedFile.readAsBytes();
+      } else {
+        _imageFile = File(pickedFile.path);
+      }
+      setState(() {});
     }
   }
 
@@ -118,18 +121,20 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     }
 
     String imageUrl = await _uploadImageToStorage();
-    FirebaseFirestore.instance.collection('locations').add({
+    await FirebaseFirestore.instance.collection('locations').add({
       'name': _nombreController.text,
       'category': _selectedCategory,
       'subcategory': _selectedSubcategory,
       'imageUrl': imageUrl,
+      'coordinates': GeoPoint(widget.latLng.latitude, widget.latLng.longitude),
     });
 
+    widget.onLocationSaved(widget.latLng);
     Navigator.pop(context);
   }
 
   Future<String> _uploadImageToStorage() async {
-    String filePath = 'path/to/your/image.png'; // Define your own storage path
+    String filePath = 'images/${DateTime.now().millisecondsSinceEpoch}.png'; // Define your own storage path
     Reference ref = FirebaseStorage.instance.ref().child(filePath);
     UploadTask uploadTask =
         kIsWeb ? ref.putData(_imageBytes!) : ref.putFile(_imageFile!);

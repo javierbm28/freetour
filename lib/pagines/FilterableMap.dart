@@ -20,6 +20,7 @@ class _FilterableMapState extends State<FilterableMap> {
   MapboxMapController? mapController;
   final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
   Symbol? lastAddedSymbol;
+  LatLng? lastTapLatLng;
 
   TextEditingController nameController = TextEditingController();
   String? selectedType;
@@ -62,8 +63,12 @@ class _FilterableMapState extends State<FilterableMap> {
     final DateTime now = DateTime.now();
     if (lastTap != null &&
         now.difference(lastTap!) < Duration(milliseconds: 500)) {
+      lastTapLatLng = latLng;
       Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => CrearNuevaUbicacion(),
+        builder: (context) => CrearNuevaUbicacion(
+          latLng: latLng,
+          onLocationSaved: _onLocationSaved,
+        ),
       ));
       lastTap = null;
     } else {
@@ -71,47 +76,53 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  void _updateMap() {
-  if (mapController == null) return;
+  void _onLocationSaved(LatLng latLng) {
+    setState(() {
+      mapController?.addSymbol(SymbolOptions(
+        geometry: latLng,
+        iconImage: 'puntero',
+        iconSize: 0.08,
+      ));
+    });
+  }
 
-  mapController!.clearSymbols();
-  for (var category in categories) {
-    for (var subcategory in category.subcategories.entries) {
-      if (subcategory.value) { // Check if subcategory is visible
-        FirebaseFirestore.instance
-            .collection('locations')
-            .where('category', isEqualTo: category.name)
-            .where('subcategory', isEqualTo: subcategory.key)
-            .get()
-            .then((querySnapshot) {
-          for (var doc in querySnapshot.docs) {
-            GeoPoint geoPoint = doc['coordinates'];
-            mapController!.addSymbol(SymbolOptions(
-              geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-              iconImage: 'puntero',
-              iconSize: 0.08,
-            ));
-          }
-        });
+  void _updateMap() {
+    if (mapController == null) return;
+
+    mapController!.clearSymbols();
+    for (var category in categories) {
+      for (var subcategory in category.subcategories.entries) {
+        if (subcategory.value) {
+          // Check if subcategory is visible
+          FirebaseFirestore.instance
+              .collection('locations')
+              .where('category', isEqualTo: category.name)
+              .where('subcategory', isEqualTo: subcategory.key)
+              .get()
+              .then((querySnapshot) {
+            for (var doc in querySnapshot.docs) {
+              GeoPoint geoPoint = doc['coordinates'];
+              mapController!.addSymbol(SymbolOptions(
+                geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+                iconImage: 'puntero',
+                iconSize: 0.08,
+              ));
+            }
+          });
+        }
       }
     }
   }
-}
-
 
   Future<void> _loadSavedLocations() async {
     if (mapController == null) return;
 
-    FirebaseFirestore.instance
-        .collection('locations')
-        .get()
-        .then((querySnapshot) {
+    FirebaseFirestore.instance.collection('locations').get().then((querySnapshot) {
       for (var doc in querySnapshot.docs) {
         GeoPoint geoPoint = doc.data()['coordinates'];
         mapController!.addSymbol(SymbolOptions(
           geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-          iconImage:
-              'puntero', // Asegúrate de que este icono está cargado en el mapa
+          iconImage: 'puntero',
           iconSize: 0.08,
         ));
       }
@@ -146,8 +157,7 @@ class _FilterableMapState extends State<FilterableMap> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.best);
+      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
       _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
     } catch (e) {
       print("Failed to get current location: $e");
@@ -171,11 +181,9 @@ class _FilterableMapState extends State<FilterableMap> {
         children: <Widget>[
           Expanded(
             child: MapboxMap(
-              accessToken:
-                  "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
+              accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
               onMapCreated: _onMapCreated,
-              initialCameraPosition:
-                  CameraPosition(target: defaultCenter, zoom: 14),
+              initialCameraPosition: CameraPosition(target: defaultCenter, zoom: 14),
               onStyleLoadedCallback: _onStyleLoaded,
               onMapClick: _onMapClicked,
             ),
@@ -197,3 +205,4 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+

@@ -71,6 +71,7 @@ flutter:
     - lib/images/IconUser.png
     - lib/images/Puntero.png
     - assets/foto_fondo.jpg
+    - assets/assets/symbols/custom-icon.png
 
 
   # To add assets to your application, add an assets section, like this:
