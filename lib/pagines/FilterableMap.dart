@@ -1,10 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:freetour/pagines/CrearNuevaUbicacion.dart';
 import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
+import 'package:freetour/pagines/UbicacionesGuardadas.dart'; // Importa la nueva página
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -35,6 +36,7 @@ class _FilterableMapState extends State<FilterableMap> {
     mapController = controller;
     _loadImageFromAssets();
     _loadPointerImage();
+    mapController!.onSymbolTapped.add(_onSymbolTapped);
   }
 
   Future<void> _loadImageFromAssets() async {
@@ -61,8 +63,7 @@ class _FilterableMapState extends State<FilterableMap> {
   DateTime? lastTap;
   void _onMapClicked(Point<double> point, LatLng latLng) async {
     final DateTime now = DateTime.now();
-    if (lastTap != null &&
-        now.difference(lastTap!) < Duration(milliseconds: 500)) {
+    if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
       lastTapLatLng = latLng;
       Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => CrearNuevaUbicacion(
@@ -74,6 +75,51 @@ class _FilterableMapState extends State<FilterableMap> {
     } else {
       lastTap = now;
     }
+  }
+
+  void _onSymbolTapped(Symbol symbol) async {
+    LatLng? symbolLocation = symbol.options.geometry;
+    if (symbolLocation == null) return;
+
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('locations')
+        .where('coordinates',
+            isEqualTo:
+                GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      DocumentSnapshot doc = querySnapshot.docs.first;
+      String name = doc['name'];
+      String subcategory = doc['subcategory'];
+
+      _showLocationInfo(name, subcategory);
+    }
+  }
+
+  void _showLocationInfo(String name, String subcategory) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(name),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Subcategoría: $subcategory'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onLocationSaved(LatLng latLng) {
@@ -93,7 +139,6 @@ class _FilterableMapState extends State<FilterableMap> {
     for (var category in categories) {
       for (var subcategory in category.subcategories.entries) {
         if (subcategory.value) {
-          // Check if subcategory is visible
           FirebaseFirestore.instance
               .collection('locations')
               .where('category', isEqualTo: category.name)
@@ -117,7 +162,10 @@ class _FilterableMapState extends State<FilterableMap> {
   Future<void> _loadSavedLocations() async {
     if (mapController == null) return;
 
-    FirebaseFirestore.instance.collection('locations').get().then((querySnapshot) {
+    FirebaseFirestore.instance
+        .collection('locations')
+        .get()
+        .then((querySnapshot) {
       for (var doc in querySnapshot.docs) {
         GeoPoint geoPoint = doc.data()['coordinates'];
         mapController!.addSymbol(SymbolOptions(
@@ -133,31 +181,30 @@ class _FilterableMapState extends State<FilterableMap> {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Verificar si los servicios de ubicación están habilitados.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      return; // Retorna si los servicios no están habilitados.
+      return;
     }
 
-    // Solicitar permiso de ubicación.
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return; // Retorna si los permisos están permanentemente denegados.
+      return;
     }
 
     if (permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always) {
-      _getCurrentLocation(); // Obtiene la ubicación actual si los permisos están concedidos.
+      _getCurrentLocation();
     }
   }
 
   Future<void> _getCurrentLocation() async {
     try {
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best);
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.best);
       _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
     } catch (e) {
       print("Failed to get current location: $e");
@@ -169,7 +216,7 @@ class _FilterableMapState extends State<FilterableMap> {
       await mapController!.addSymbol(SymbolOptions(
         geometry: latLng,
         iconImage: 'icon-user',
-        iconSize: 0.1, // Fixed icon size regardless of zoom level
+        iconSize: 0.1,
       ));
     }
   }
@@ -181,26 +228,42 @@ class _FilterableMapState extends State<FilterableMap> {
         children: <Widget>[
           Expanded(
             child: MapboxMap(
-              accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
+              accessToken:
+                  "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
               onMapCreated: _onMapCreated,
-              initialCameraPosition: CameraPosition(target: defaultCenter, zoom: 14),
+              initialCameraPosition:
+                  CameraPosition(target: defaultCenter, zoom: 14),
               onStyleLoadedCallback: _onStyleLoaded,
               onMapClick: _onMapClicked,
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => Filtros(
-              onApplyFilters: (selectedCategories) {
-                // Lógica para aplicar filtros
-              },
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => Filtros(
+                  onApplyFilters: (selectedCategories) {
+                    // Lógica para aplicar filtros
+                  },
+                ),
+              ),
             ),
+            child: Icon(Icons.filter_list),
           ),
-        ),
-        child: Icon(Icons.filter_list),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => UbicacionesGuardadas(), // Navegar a la nueva página
+              ),
+            ),
+            child: Icon(Icons.list),
+          ),
+        ],
       ),
     );
   }
