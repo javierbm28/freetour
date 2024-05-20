@@ -11,6 +11,8 @@ class Filtros extends StatefulWidget {
 }
 
 class _FiltrosState extends State<Filtros> {
+  List<Category> tempCategories = List.from(categories);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,14 +22,14 @@ class _FiltrosState extends State<Filtros> {
           IconButton(
             icon: Icon(Icons.check),
             onPressed: () {
-              widget.onApplyFilters(categories);
+              widget.onApplyFilters(tempCategories);
               Navigator.pop(context);
             },
           )
         ],
       ),
       body: ListView(
-        children: categories.map((category) {
+        children: tempCategories.map((category) {
           return ExpansionTile(
             title: Text(category.name),
             initiallyExpanded: category.isVisible(),
@@ -38,7 +40,6 @@ class _FiltrosState extends State<Filtros> {
                 onChanged: (bool? value) {
                   setState(() {
                     category.subcategories[subcat] = value!;
-                    // Force update to handle category level visibility
                   });
                 },
               );
@@ -49,3 +50,4 @@ class _FiltrosState extends State<Filtros> {
     );
   }
 }
+

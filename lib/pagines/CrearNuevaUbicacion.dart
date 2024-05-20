@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart' as cat;
 import 'package:flutter/foundation.dart'; // Importa foundation.dart para kIsWeb
 import 'package:mapbox_gl/mapbox_gl.dart';
+import 'package:mime/mime.dart';
 
 class CrearNuevaUbicacion extends StatefulWidget {
   final LatLng latLng;
@@ -77,7 +78,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
             if (_imageFile != null) Image.file(_imageFile!),
             if (_imageBytes != null) Image.memory(_imageBytes!),
             ElevatedButton(
-              onPressed: _uploadLocation,
+              onPressed: _validateAndUpload,
               child: Text('Guardar Ubicación'),
             ),
           ],
@@ -107,16 +108,32 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
         _imageFile = File(pickedFile.path);
       }
       setState(() {});
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Por favor, selecciona un archivo de imagen.')));
     }
   }
 
-  Future<void> _uploadLocation() async {
+  Future<void> _validateAndUpload() async {
     if (_nombreController.text.isEmpty ||
         _selectedCategory == null ||
         _selectedSubcategory == null ||
         (_imageFile == null && _imageBytes == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Todos los campos son obligatorios')));
+      return;
+    }
+
+    String mimeType;
+    if (kIsWeb) {
+      mimeType = lookupMimeType('', headerBytes: _imageBytes)!;
+    } else {
+      mimeType = lookupMimeType(_imageFile!.path)!;
+    }
+
+    if (!mimeType.startsWith('image/')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('El archivo seleccionado no es una imagen')));
       return;
     }
 
@@ -144,5 +161,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     return downloadUrl;
   }
 }
+
+
 
 

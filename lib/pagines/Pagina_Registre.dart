@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
+import 'package:freetour/pagines/VerificacionCorreo.dart'; // Importa la nueva página
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -23,6 +24,7 @@ class _RegistroState extends State<Registro> {
   TextEditingController controladorContrasenya = TextEditingController();
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorApellidos = TextEditingController();
+  bool _isRegistering = false; // Para controlar el estado del botón
 
   @override
   Widget build(BuildContext context) {
@@ -110,58 +112,8 @@ class _RegistroState extends State<Registro> {
                       height: 200,
                     ),
                     BotoAuth(
-                      text: "Registrarse",
-                      onTap: () async {
-                        try {
-                          final UserCredential userCredential =
-                              await FirebaseAuth.instance
-                                  .createUserWithEmailAndPassword(
-                            email: controladorEmail.text,
-                            password: controladorContrasenya.text,
-                          );
-
-                          final User? user = userCredential.user;
-
-                          if (user != null) {
-                            await user.sendEmailVerification();
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text("Verifica tu correo electrónico"),
-                                content: Text(
-                                    "Hemos enviado un enlace de verificación a tu correo. Verifica tu correo antes de continuar."),
-                                actions: <Widget>[
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: Text("Ok"),
-                                  ),
-                                ],
-                              ),
-                            );
-                          } else {
-                            throw Exception(
-                                "No se pudo crear la cuenta del usuario.");
-                          }
-                        } catch (e) {
-                          showDialog(
-                            context: context,
-                            builder: (ctx) => AlertDialog(
-                              title: Text("Error en el registro"),
-                              content: Text(e.toString()),
-                              actions: <Widget>[
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.of(ctx).pop();
-                                  },
-                                  child: Text("Cerrar"),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                      },
+                      text: _isRegistering ? "Registrando..." : "Registrarse",
+                      onTap: _isRegistering ? null : _registrarUsuario,
                     ),
                   ],
                 )
@@ -172,4 +124,68 @@ class _RegistroState extends State<Registro> {
       ),
     );
   }
+
+  Future<void> _registrarUsuario() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isRegistering = true;
+      });
+
+      try {
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: controladorEmail.text,
+          password: controladorContrasenya.text,
+        );
+
+        final User? user = userCredential.user;
+
+        if (user != null) {
+          await user.sendEmailVerification();
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'nombre': controladorNombre.text,
+            'apellidos': controladorApellidos.text,
+            'email': controladorEmail.text,
+          });
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VerificacionCorreo(
+                email: controladorEmail.text,
+                user: user,
+              ),
+            ),
+          );
+        } else {
+          throw Exception("No se pudo crear la cuenta del usuario.");
+        }
+      } catch (e) {
+        setState(() {
+          _isRegistering = false;
+        });
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text("Error en el registro"),
+            content: Text(e.toString()),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                },
+                child: Text("Cerrar"),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 }
+
+

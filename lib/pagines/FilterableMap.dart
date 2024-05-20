@@ -6,6 +6,7 @@ import 'package:freetour/pagines/CrearNuevaUbicacion.dart';
 import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
 import 'package:freetour/pagines/UbicacionesGuardadas.dart'; // Importa la nueva página
+import 'package:freetour/pagines/Pagina_Inici.dart'; // Importa la página de inicio
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -13,6 +14,10 @@ import 'dart:ui';
 import 'dart:math';
 
 class FilterableMap extends StatefulWidget {
+  final LatLng? initialPosition;
+
+  FilterableMap({this.initialPosition});
+
   @override
   _FilterableMapState createState() => _FilterableMapState();
 }
@@ -22,6 +27,7 @@ class _FilterableMapState extends State<FilterableMap> {
   final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
   Symbol? lastAddedSymbol;
   LatLng? lastTapLatLng;
+  List<Category> activeFilters = categories;
 
   TextEditingController nameController = TextEditingController();
   String? selectedType;
@@ -46,8 +52,11 @@ class _FilterableMapState extends State<FilterableMap> {
   }
 
   void _onStyleLoaded() {
-    _loadSavedLocations();
     _requestLocationPermission();
+    if (widget.initialPosition != null) {
+      mapController?.animateCamera(CameraUpdate.newLatLng(widget.initialPosition!));
+      _updateMap();
+    }
   }
 
   Future<void> _loadPointerImage() async {
@@ -84,8 +93,7 @@ class _FilterableMapState extends State<FilterableMap> {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('locations')
         .where('coordinates',
-            isEqualTo:
-                GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
+            isEqualTo: GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
         .get();
 
     if (querySnapshot.docs.isNotEmpty) {
@@ -136,7 +144,7 @@ class _FilterableMapState extends State<FilterableMap> {
     if (mapController == null) return;
 
     mapController!.clearSymbols();
-    for (var category in categories) {
+    for (var category in activeFilters) {
       for (var subcategory in category.subcategories.entries) {
         if (subcategory.value) {
           FirebaseFirestore.instance
@@ -160,21 +168,7 @@ class _FilterableMapState extends State<FilterableMap> {
   }
 
   Future<void> _loadSavedLocations() async {
-    if (mapController == null) return;
-
-    FirebaseFirestore.instance
-        .collection('locations')
-        .get()
-        .then((querySnapshot) {
-      for (var doc in querySnapshot.docs) {
-        GeoPoint geoPoint = doc.data()['coordinates'];
-        mapController!.addSymbol(SymbolOptions(
-          geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-          iconImage: 'puntero',
-          iconSize: 0.08,
-        ));
-      }
-    });
+    // No need to load saved locations initially
   }
 
   Future<void> _requestLocationPermission() async {
@@ -195,8 +189,7 @@ class _FilterableMapState extends State<FilterableMap> {
       return;
     }
 
-    if (permission == LocationPermission.whileInUse ||
-        permission == LocationPermission.always) {
+    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
       _getCurrentLocation();
     }
   }
@@ -221,51 +214,74 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
+  void _applyFilters(List<Category> selectedCategories) {
+    setState(() {
+      activeFilters = selectedCategories;
+    });
+    _updateMap();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: MapboxMap(
-              accessToken:
-                  "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
-              onMapCreated: _onMapCreated,
-              initialCameraPosition:
-                  CameraPosition(target: defaultCenter, zoom: 14),
-              onStyleLoadedCallback: _onStyleLoaded,
-              onMapClick: _onMapClicked,
+    return WillPopScope(
+      onWillPop: () async => false, // Prevenir que se pueda volver hacia atrás
+      child: Scaffold(
+        body: Column(
+          children: <Widget>[
+            Expanded(
+              child: MapboxMap(
+                accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
+                onMapCreated: _onMapCreated,
+                initialCameraPosition: CameraPosition(
+                    target: widget.initialPosition ?? defaultCenter, zoom: 14),
+                onStyleLoadedCallback: _onStyleLoaded,
+                onMapClick: _onMapClicked,
+              ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => Filtros(
-                  onApplyFilters: (selectedCategories) {
-                    // Lógica para aplicar filtros
-                  },
+          ],
+        ),
+        floatingActionButton: Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => Filtros(
+                    onApplyFilters: (selectedCategories) {
+                      _applyFilters(selectedCategories);
+                    },
+                  ),
                 ),
               ),
+              child: Icon(Icons.filter_list),
             ),
-            child: Icon(Icons.filter_list),
-          ),
-          SizedBox(height: 10),
-          FloatingActionButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => UbicacionesGuardadas(), // Navegar a la nueva página
+            SizedBox(height: 10),
+            FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => UbicacionesGuardadas(), // Navegar a la nueva página
+                ),
               ),
+              child: Icon(Icons.list),
             ),
-            child: Icon(Icons.list),
-          ),
-        ],
+            SizedBox(height: 10),
+            FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => PaginaInici(), // Navegar a la página de inicio
+                ),
+              ),
+              child: Icon(Icons.home),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+
+
+
+
 

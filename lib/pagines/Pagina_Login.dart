@@ -11,7 +11,7 @@ class Login extends StatefulWidget {
 
   const Login({
     Key? key,
-     this.alFerClic,
+    this.alFerClic,
   }) : super(key: key);
 
   @override
@@ -48,84 +48,86 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Discovery"),
-        backgroundColor: const Color.fromARGB(255, 63, 214, 63),
-      ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Text(
-                "Login",
-                style: TextStyle(
-                  fontSize: 70,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 63, 214, 63),
-                ),
-              ),
-              const SizedBox(height: 50),
-              TextFieldAuth(
-                controller: _controllerEmail,
-                obscureText: false,
-                labelText: "Email",
-              ),
-              const SizedBox(height: 20),
-              TextFieldAuth(
-                controller: _controllerContrasenya,
-                obscureText: true,
-                labelText: "Contraseña",
-              ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const RecuperarContrasenya(),
-                    ),
-                  );
-                },
-                child: const Text(
-                  "Olvidaste la contraseña? Haz click aquí",
+    return WillPopScope(
+      onWillPop: () async => false, // Evitar retroceso
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Discovery"),
+          backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        ),
+        backgroundColor: Colors.white,
+        body: SingleChildScrollView(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(15),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Text(
+                  "Login",
                   style: TextStyle(
-                    color: Colors.blue,
+                    fontSize: 70,
                     fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 63, 214, 63),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  BotoAuth(
-                    text: "Registrarse",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => Registro(alFerClic: widget.alFerClic!),
-                        ),
-                      );
-                    },
+                const SizedBox(height: 50),
+                TextFieldAuth(
+                  controller: _controllerEmail,
+                  obscureText: false,
+                  labelText: "Email",
+                ),
+                const SizedBox(height: 20),
+                TextFieldAuth(
+                  controller: _controllerContrasenya,
+                  obscureText: true,
+                  labelText: "Contraseña",
+                ),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RecuperarContrasenya(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    "Olvidaste la contraseña? Haz click aquí",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  
-
-                  BotoAuth(
-                    text: "Entrar", 
-                    onTap: () => _ferLogin(context),
-                  ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    BotoAuth(
+                      text: "Registrarse",
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Registro(alFerClic: widget.alFerClic ?? () {}),
+                          ),
+                        );
+                      },
+                    ),
+                    BotoAuth(
+                      text: "Entrar",
+                      onTap: () => _ferLogin(context),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
