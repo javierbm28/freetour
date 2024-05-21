@@ -7,6 +7,7 @@ import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
 import 'package:freetour/pagines/UbicacionesGuardadas.dart'; // Importa la nueva página
 import 'package:freetour/pagines/Pagina_Inici.dart'; // Importa la página de inicio
+import 'package:freetour/pagines/VerPerfil.dart'; // Importa la nueva página VerPerfil
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -104,12 +105,14 @@ class _FilterableMapState extends State<FilterableMap> {
       String subcategory = doc['subcategory'];
       String imageUrl = doc['imageUrl'];
       String userApodo = doc['userApodo'];
+      String userEmail = doc['userEmail'];
+      String? userId = (doc.data() as Map<String, dynamic>?)?.containsKey('userId') == true ? doc['userId'] : null;
 
-      _showLocationInfo(name, category, subcategory, imageUrl, userApodo);
+      _showLocationInfo(name, category, subcategory, imageUrl, userApodo, userId, userEmail);
     }
   }
 
-  void _showLocationInfo(String name, String category, String subcategory, String imageUrl, String userApodo) {
+  void _showLocationInfo(String name, String category, String subcategory, String imageUrl, String userApodo, String? userId, String userEmail) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -131,7 +134,24 @@ class _FilterableMapState extends State<FilterableMap> {
                   },
                 ),
               SizedBox(height: 10),
-              Text('Creado por: $userApodo'),
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).pop(); // Cierra el diálogo actual
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Creado por: $userApodo',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
+                  ),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -296,6 +316,12 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
+
+
+
+
+
 
 
 

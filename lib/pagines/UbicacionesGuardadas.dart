@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página del mapa
 import 'package:freetour/pagines/CategoriasFiltros.dart';
+import 'package:freetour/pagines/VerPerfil.dart'; // Importa la página de VerPerfil
 
 class UbicacionesGuardadas extends StatelessWidget {
   void _activateFilterAndNavigate(BuildContext context, String category, String subcategory, LatLng coordinates) {
@@ -23,10 +24,28 @@ class UbicacionesGuardadas extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => FilterableMap(
           initialPosition: coordinates,
-          zoomLevel: 20.0, 
+          zoomLevel: 20.0,
         ),
       ),
     );
+  }
+
+  void _navigateToUserProfile(BuildContext context, String userEmail) async {
+    QuerySnapshot userSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .get();
+
+    if (userSnapshot.docs.isNotEmpty) {
+      DocumentSnapshot userDoc = userSnapshot.docs.first;
+      String userId = userDoc.id;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
+        ),
+      );
+    }
   }
 
   @override
@@ -84,12 +103,23 @@ class UbicacionesGuardadas extends StatelessWidget {
                           final imageUrl = location['imageUrl'] ?? '';
                           final coordinates = location['coordinates'];
                           final apodo = location['userApodo'] ?? 'Sin apodo';
+                          final userEmail = location['userEmail'];
 
                           return ListTile(
                             title: Text(location['name'] ?? 'Sin nombre'),
                             subtitle: Row(
                               children: [
-                                Text(apodo),
+                                GestureDetector(
+                                  onTap: () => _navigateToUserProfile(context, userEmail),
+                                  child: Text(
+                                    apodo,
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             trailing: Row(
@@ -192,6 +222,7 @@ class UbicacionesGuardadas extends StatelessWidget {
     return groupedLocations;
   }
 }
+
 
 
 
