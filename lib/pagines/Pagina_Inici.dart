@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/components/boto_auth.dart';
-import 'package:freetour/pagines/MostrarDatos.dart';
+import 'package:freetour/pagines/MostrarDatos.dart'; // Asegúrate de que esta es la clase correcta
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
-import 'package:freetour/pagines/Pagina_editar_dades.dart';
 import 'package:video_player/video_player.dart';
 
 class PaginaInici extends StatefulWidget {
@@ -59,7 +58,7 @@ class _PaginaIniciState extends State<PaginaInici> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => Datos()),
+                  MaterialPageRoute(builder: (context) => MostrarDatos()),
                 );
               },
               icon: const Icon(Icons.person),
@@ -147,4 +146,3 @@ class _PaginaIniciState extends State<PaginaInici> {
     );
   }
 }
-

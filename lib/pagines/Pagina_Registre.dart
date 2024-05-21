@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/components/textField_auth.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
-import 'package:freetour/pagines/VerificacionCorreo.dart'; // Importa la nueva página
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freetour/pagines/VerificacionCorreo.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'dart:typed_data';
 
 class Registro extends StatefulWidget {
   final void Function()? alFerClic;
@@ -24,7 +27,8 @@ class _RegistroState extends State<Registro> {
   TextEditingController controladorContrasenya = TextEditingController();
   TextEditingController controladorNombre = TextEditingController();
   TextEditingController controladorApellidos = TextEditingController();
-  bool _isRegistering = false; // Para controlar el estado del botón
+  TextEditingController controladorApodo = TextEditingController();
+  bool _isRegistering = false;
 
   @override
   Widget build(BuildContext context) {
@@ -51,49 +55,44 @@ class _RegistroState extends State<Registro> {
                     color: Color.fromARGB(255, 63, 214, 63),
                   ),
                 ),
-                const SizedBox(
-                  height: 50,
-                ),
+                const SizedBox(height: 50),
                 TextFieldAuth(
                   controller: controladorNombre,
                   obscureText: false,
                   labelText: "Nombre",
                 ),
-                const SizedBox(
-                  height: 50,
-                ),
+                const SizedBox(height: 20),
                 TextFieldAuth(
                   controller: controladorApellidos,
                   obscureText: false,
                   labelText: "Apellidos",
                 ),
-                const SizedBox(
-                  height: 50,
-                ),
+                const SizedBox(height: 20),
                 TextFieldAuth(
                   controller: controladorEmail,
                   obscureText: false,
                   labelText: "Email",
                 ),
-                const SizedBox(
-                  height: 50,
-                ),
+                const SizedBox(height: 20),
                 TextFieldAuth(
                   controller: controladorContrasenya,
                   obscureText: true,
                   labelText: "Contraseña",
                 ),
-                const SizedBox(
-                  height: 100,
+                const SizedBox(height: 20),
+                TextFieldAuth(
+                  controller: controladorApodo,
+                  obscureText: false,
+                  labelText: "Apodo",
                 ),
+                const SizedBox(height: 100),
                 GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            Login(alFerClic: widget.alFerClic),
+                        builder: (context) => Login(alFerClic: widget.alFerClic),
                       ),
                     );
                   },
@@ -108,15 +107,13 @@ class _RegistroState extends State<Registro> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(
-                      height: 200,
-                    ),
+                    const SizedBox(height: 200),
                     BotoAuth(
                       text: _isRegistering ? "Registrando..." : "Registrarse",
                       onTap: _isRegistering ? null : _registrarUsuario,
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ),
@@ -142,13 +139,13 @@ class _RegistroState extends State<Registro> {
 
         if (user != null) {
           await user.sendEmailVerification();
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .set({
+          final imageUrl = await _uploadDefaultProfileImage(user.uid);
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
             'nombre': controladorNombre.text,
             'apellidos': controladorApellidos.text,
             'email': controladorEmail.text,
+            'apodo': controladorApodo.text,
+            'fotoPerfil': imageUrl,
           });
 
           Navigator.pushReplacement(
@@ -185,6 +182,18 @@ class _RegistroState extends State<Registro> {
         );
       }
     }
+  }
+
+  Future<String> _uploadDefaultProfileImage(String userId) async {
+    final ByteData bytes = await rootBundle.load('lib/images/PerfilUser.png');
+    final Uint8List list = bytes.buffer.asUint8List();
+
+    final Reference storageRef =
+        FirebaseStorage.instance.ref().child('profile_images/$userId.png');
+    final UploadTask uploadTask = storageRef.putData(list);
+    final TaskSnapshot snapshot = await uploadTask;
+
+    return await snapshot.ref.getDownloadURL();
   }
 }
 

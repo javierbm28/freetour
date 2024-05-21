@@ -76,8 +76,15 @@ class UbicacionesGuardadas extends StatelessWidget {
                         children: subLocations.map((location) {
                           final imageUrl = location['imageUrl'] ?? '';
                           final coordinates = location['coordinates'];
+                          final apodo = location['userApodo'] ?? 'Sin apodo';
+
                           return ListTile(
-                            title: Text(location['name']),
+                            title: Text(location['name'] ?? 'Sin nombre'),
+                            subtitle: Row(
+                              children: [
+                                Text(apodo),
+                              ],
+                            ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -162,8 +169,8 @@ class UbicacionesGuardadas extends StatelessWidget {
     final Map<String, Map<String, List<DocumentSnapshot>>> groupedLocations = {};
 
     for (var location in locations) {
-      final category = location['category'];
-      final subcategory = location['subcategory'];
+      final category = location['category'] ?? 'Sin categoría';
+      final subcategory = location['subcategory'] ?? 'Sin subcategoría';
 
       if (!groupedLocations.containsKey(category)) {
         groupedLocations[category] = {};
@@ -177,6 +184,7 @@ class UbicacionesGuardadas extends StatelessWidget {
     return groupedLocations;
   }
 }
+
 
 
 

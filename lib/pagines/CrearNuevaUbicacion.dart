@@ -8,6 +8,7 @@ import 'package:freetour/pagines/CategoriasFiltros.dart' as cat;
 import 'package:flutter/foundation.dart'; // Importa foundation.dart para kIsWeb
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:mime/mime.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CrearNuevaUbicacion extends StatefulWidget {
   final LatLng latLng;
@@ -27,6 +28,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
   File? _imageFile;
   Uint8List? _imageBytes; // Para web
   final picker = ImagePicker();
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -185,16 +187,29 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     }
 
     String imageUrl = await _uploadImageToStorage();
-    await FirebaseFirestore.instance.collection('locations').add({
-      'name': _nombreController.text,
-      'category': _selectedCategory,
-      'subcategory': _selectedSubcategory,
-      'imageUrl': imageUrl,
-      'coordinates': GeoPoint(widget.latLng.latitude, widget.latLng.longitude),
-    });
 
-    widget.onLocationSaved(widget.latLng);
-    Navigator.pop(context);
+    final currentUser = user;
+    if (currentUser != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser.uid).get();
+      final userData = userDoc.data();
+      final apodo = userData?['apodo'] ?? 'Sin apodo';
+
+      await FirebaseFirestore.instance.collection('locations').add({
+        'name': _nombreController.text,
+        'category': _selectedCategory,
+        'subcategory': _selectedSubcategory,
+        'imageUrl': imageUrl,
+        'coordinates': GeoPoint(widget.latLng.latitude, widget.latLng.longitude),
+        'userEmail': currentUser.email, // Guardar el correo del usuario
+        'userApodo': apodo, // Guardar el apodo del usuario
+      });
+
+      widget.onLocationSaved(widget.latLng);
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se ha podido autenticar al usuario.')));
+    }
   }
 
   Future<String> _uploadImageToStorage() async {
@@ -208,8 +223,6 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     return downloadUrl;
   }
 }
-
-
 
 
 
