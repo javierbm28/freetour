@@ -33,55 +33,102 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Crear Nueva Ubicación"),
+        backgroundColor: Color.fromARGB(255, 63, 214, 63), // Color del encabezado
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            TextField(
-              controller: _nombreController,
-              decoration: InputDecoration(labelText: "Nombre del lugar"),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            constraints: BoxConstraints(maxWidth: 400), // Limitar el ancho máximo
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                TextField(
+                  controller: _nombreController,
+                  decoration: InputDecoration(
+                    labelText: "Nombre del lugar",
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 20),
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: "Categoría",
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCategory = newValue;
+                      _updateSubcategories(newValue);
+                    });
+                  },
+                  items: cat.categories.map<DropdownMenuItem<String>>((cat.Category category) {
+                    return DropdownMenuItem<String>(
+                      value: category.name,
+                      child: Text(category.name),
+                    );
+                  }).toList(),
+                ),
+                if (_subcategories.isNotEmpty)
+                  SizedBox(height: 20),
+                if (_subcategories.isNotEmpty)
+                  DropdownButtonFormField<String>(
+                    value: _selectedSubcategory,
+                    decoration: InputDecoration(
+                      labelText: "Subcategoría",
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedSubcategory = newValue;
+                      });
+                    },
+                    items: _subcategories.map<DropdownMenuItem<String>>((String subcategory) {
+                      return DropdownMenuItem<String>(
+                        value: subcategory,
+                        child: Text(subcategory),
+                      );
+                    }).toList(),
+                  ),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _pickImage,
+                  child: Text('Seleccionar Imagen'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: BorderSide(color: Colors.black),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    shadowColor: Colors.grey,
+                    elevation: 5,
+                  ),
+                ),
+                SizedBox(height: 20),
+                if (_imageFile != null)
+                  Image.file(_imageFile!),
+                if (_imageBytes != null)
+                  Image.memory(_imageBytes!),
+                SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _validateAndUpload,
+                  child: Text('Guardar Ubicación'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    side: BorderSide(color: Colors.black),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    shadowColor: Colors.grey,
+                    elevation: 5,
+                  ),
+                ),
+              ],
             ),
-            DropdownButton<String>(
-              value: _selectedCategory,
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedCategory = newValue;
-                  _updateSubcategories(newValue);
-                });
-              },
-              items: cat.categories.map<DropdownMenuItem<String>>((cat.Category category) {
-                return DropdownMenuItem<String>(
-                  value: category.name,
-                  child: Text(category.name),
-                );
-              }).toList(),
-            ),
-            if (_subcategories.isNotEmpty)
-              DropdownButton<String>(
-                value: _selectedSubcategory,
-                onChanged: (newValue) {
-                  setState(() {
-                    _selectedSubcategory = newValue;
-                  });
-                },
-                items: _subcategories.map<DropdownMenuItem<String>>((String subcategory) {
-                  return DropdownMenuItem<String>(
-                    value: subcategory,
-                    child: Text(subcategory),
-                  );
-                }).toList(),
-              ),
-            ElevatedButton(
-              onPressed: _pickImage,
-              child: Text('Seleccionar Imagen'),
-            ),
-            if (_imageFile != null) Image.file(_imageFile!),
-            if (_imageBytes != null) Image.memory(_imageBytes!),
-            ElevatedButton(
-              onPressed: _validateAndUpload,
-              child: Text('Guardar Ubicación'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -161,6 +208,7 @@ class _CrearNuevaUbicacionState extends State<CrearNuevaUbicacion> {
     return downloadUrl;
   }
 }
+
 
 
 

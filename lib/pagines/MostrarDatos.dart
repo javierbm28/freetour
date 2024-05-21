@@ -11,19 +11,17 @@ class Datos extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          actions:[
-            
-            IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PaginaInici(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.arrow_back)),
-          ],
+          leading: IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PaginaInici(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
           title: const Text("Editar datos"),
           backgroundColor: const Color.fromARGB(255, 63, 214, 63),
         ),
@@ -32,3 +30,4 @@ class Datos extends StatelessWidget {
     );
   }
 }
+

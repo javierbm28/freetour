@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 
 class VerificacionCorreo extends StatefulWidget {
@@ -67,11 +68,25 @@ class _VerificacionCorreoState extends State<VerificacionCorreo> {
   }
 
   Future<void> _cancelRegistration() async {
-    await widget.user.delete();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => Login()),
-    );
+    try {
+      // Eliminar los datos del usuario en Firestore
+      await FirebaseFirestore.instance.collection('users').doc(widget.user.uid).delete();
+      
+      // Eliminar la cuenta de usuario
+      await widget.user.delete();
+
+      // Navegar al login
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Login()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al cancelar el registro: ${e.toString()}"),
+        ),
+      );
+    }
   }
 
   @override
@@ -94,22 +109,28 @@ class _VerificacionCorreoState extends State<VerificacionCorreo> {
                 Text(
                   "Hemos enviado un enlace de verificación a tu correo electrónico.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 20),
                 if (_isSendingVerification)
                   CircularProgressIndicator()
                 else
-                  ElevatedButton(
-                    onPressed: _sendVerificationEmail,
-                    child: Text(
-                      "Reenviar correo de verificación",
-                      style: TextStyle(color: Colors.black),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white, // Cambiar el color de fondo a blanco
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20), // Borde redondeado
+                  SizedBox(
+                    width: double.infinity, // Asegura que el botón use todo el ancho disponible
+                    height: 50, // Altura del botón
+                    child: ElevatedButton(
+                      onPressed: _sendVerificationEmail,
+                      child: Text(
+                        "Reenviar correo de verificación",
+                        style: TextStyle(color: Colors.black),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromARGB(255, 173, 172, 172), // Cambiar el color de fondo a blanco
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20), // Borde redondeado
+                        ),
+                        shadowColor: const Color.fromARGB(255, 105, 105, 105), // Añadir sombra
+                        elevation: 5, // Añadir elevación para sombra
                       ),
                     ),
                   ),
@@ -123,33 +144,39 @@ class _VerificacionCorreoState extends State<VerificacionCorreo> {
                         child: ElevatedButton(
                           onPressed: _checkEmailVerified,
                           child: Text(
-                            "Comprobar verificación",
+                            "Verificación",
                             style: TextStyle(color: Colors.black),
+                            overflow: TextOverflow.ellipsis, // Forzar el texto en una línea
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color.fromARGB(255, 63, 214, 63), // Cambiar el color de fondo
+                            backgroundColor: Color.fromARGB(255, 63, 214, 63),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20), // Borde redondeado
+                              borderRadius: BorderRadius.circular(20),
                             ),
+                            shadowColor: Colors.grey, // Añadir sombra
+                            elevation: 5, // Añadir elevación para sombra
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 15),
                     Expanded(
                       child: SizedBox(
                         height: 50, // Altura del botón
                         child: ElevatedButton(
                           onPressed: _cancelRegistration,
                           child: Text(
-                            "Cancelar registro",
+                            "Cancelar Registro",
                             style: TextStyle(color: Colors.black),
+                            overflow: TextOverflow.ellipsis, // Forzar el texto en una línea
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red, // Cambiar el color de fondo
+                            backgroundColor: Colors.red,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20), // Borde redondeado
+                              borderRadius: BorderRadius.circular(20),
                             ),
+                            shadowColor: Colors.grey, // Añadir sombra
+                            elevation: 5, // Añadir elevación para sombra
                           ),
                         ),
                       ),
@@ -164,6 +191,8 @@ class _VerificacionCorreoState extends State<VerificacionCorreo> {
     );
   }
 }
+
+
 
 
 
