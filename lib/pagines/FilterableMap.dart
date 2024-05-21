@@ -15,8 +15,9 @@ import 'dart:math';
 
 class FilterableMap extends StatefulWidget {
   final LatLng? initialPosition;
+  final double zoomLevel; // Agregar el parámetro zoomLevel
 
-  FilterableMap({this.initialPosition});
+  FilterableMap({this.initialPosition, this.zoomLevel = 14.0}); // Añadir zoomLevel con valor por defecto
 
   @override
   _FilterableMapState createState() => _FilterableMapState();
@@ -54,7 +55,7 @@ class _FilterableMapState extends State<FilterableMap> {
   void _onStyleLoaded() {
     _requestLocationPermission();
     if (widget.initialPosition != null) {
-      mapController?.animateCamera(CameraUpdate.newLatLng(widget.initialPosition!));
+      mapController?.animateCamera(CameraUpdate.newLatLngZoom(widget.initialPosition!, widget.zoomLevel)); // Usar zoomLevel
       _updateMap();
     }
   }
@@ -99,13 +100,16 @@ class _FilterableMapState extends State<FilterableMap> {
     if (querySnapshot.docs.isNotEmpty) {
       DocumentSnapshot doc = querySnapshot.docs.first;
       String name = doc['name'];
+      String category = doc['category'];
       String subcategory = doc['subcategory'];
+      String imageUrl = doc['imageUrl'];
+      String userApodo = doc['userApodo'];
 
-      _showLocationInfo(name, subcategory);
+      _showLocationInfo(name, category, subcategory, imageUrl, userApodo);
     }
   }
 
-  void _showLocationInfo(String name, String subcategory) {
+  void _showLocationInfo(String name, String category, String subcategory, String imageUrl, String userApodo) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -114,7 +118,20 @@ class _FilterableMapState extends State<FilterableMap> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Subcategoría: $subcategory'),
+              Text('$category - $subcategory'),
+              SizedBox(height: 10),
+              if (imageUrl.isNotEmpty)
+                Image.network(
+                  imageUrl,
+                  width: 200, // Ancho estándar
+                  height: 150, // Alto estándar
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.error);
+                  },
+                ),
+              SizedBox(height: 10),
+              Text('Creado por: $userApodo'),
             ],
           ),
           actions: [
@@ -233,7 +250,7 @@ class _FilterableMapState extends State<FilterableMap> {
                 accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
-                    target: widget.initialPosition ?? defaultCenter, zoom: 14),
+                    target: widget.initialPosition ?? defaultCenter, zoom: widget.zoomLevel), // Usar zoomLevel
                 onStyleLoadedCallback: _onStyleLoaded,
                 onMapClick: _onMapClicked,
               ),
@@ -279,6 +296,8 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
+
 
 
 

@@ -5,11 +5,17 @@ import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página del 
 import 'package:freetour/pagines/CategoriasFiltros.dart';
 
 class UbicacionesGuardadas extends StatelessWidget {
-  void _activateFilterAndNavigate(BuildContext context, String subcategory, LatLng coordinates) {
-    for (var category in categories) {
-      if (category.subcategories.containsKey(subcategory)) {
-        category.subcategories[subcategory] = true;
-        break;
+  void _activateFilterAndNavigate(BuildContext context, String category, String subcategory, LatLng coordinates) {
+    // Activar filtros
+    for (var catCategory in categories) {
+      if (catCategory.name == category) {
+        for (var subcatKey in catCategory.subcategories.keys) {
+          catCategory.subcategories[subcatKey] = subcatKey == subcategory;
+        }
+      } else {
+        for (var subcatKey in catCategory.subcategories.keys) {
+          catCategory.subcategories[subcatKey] = false;
+        }
       }
     }
 
@@ -17,6 +23,7 @@ class UbicacionesGuardadas extends StatelessWidget {
       MaterialPageRoute(
         builder: (context) => FilterableMap(
           initialPosition: coordinates,
+          zoomLevel: 20.0, 
         ),
       ),
     );
@@ -109,6 +116,7 @@ class UbicacionesGuardadas extends StatelessWidget {
                                   onPressed: () {
                                     _activateFilterAndNavigate(
                                       context,
+                                      category,
                                       subcategory,
                                       LatLng(coordinates.latitude, coordinates.longitude),
                                     );
@@ -184,6 +192,7 @@ class UbicacionesGuardadas extends StatelessWidget {
     return groupedLocations;
   }
 }
+
 
 
 

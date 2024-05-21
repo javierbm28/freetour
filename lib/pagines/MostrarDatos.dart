@@ -6,6 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:typed_data'; // Importa este paquete para Uint8List
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:mapbox_gl/mapbox_gl.dart';
+import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página del mapa
+import 'package:freetour/pagines/CategoriasFiltros.dart' as cat; // Importa categorías y filtros
 
 class MostrarDatos extends StatefulWidget {
   @override
@@ -66,7 +69,7 @@ class _MostrarDatosState extends State<MostrarDatos> {
       }
       imageUrl = await storageRef.getDownloadURL();
     }
-    
+
     final newApodo = _apodoController.text;
 
     // Update user data
@@ -98,6 +101,115 @@ class _MostrarDatosState extends State<MostrarDatos> {
     Navigator.pop(context);
   }
 
+  Future<List<DocumentSnapshot>> _getUserLocations() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('locations')
+        .where('userEmail', isEqualTo: user.email)
+        .get();
+    return snapshot.docs;
+  }
+
+  void _navigateToLocation(LatLng coordinates, String category, String subcategory) {
+    // Activar filtros
+    for (var catCategory in cat.categories) {
+      if (catCategory.name == category) {
+        for (var subcatKey in catCategory.subcategories.keys) {
+          catCategory.subcategories[subcatKey] = subcatKey == subcategory;
+        }
+      } else {
+        for (var subcatKey in catCategory.subcategories.keys) {
+          catCategory.subcategories[subcatKey] = false;
+        }
+      }
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FilterableMap(
+          initialPosition: coordinates,
+          zoomLevel: 20.0, // Usar parámetro correcto
+        ),
+      ),
+    );
+  }
+
+  void _showProfileImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop(); // Cerrar el diálogo de pantalla completa
+            },
+            child: Center(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.error, color: Colors.white);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          content: Image.network(
+            imageUrl,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.error);
+            },
+          ),
+          actions: [
+            TextButton(
+              child: Text('Cerrar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog(DocumentSnapshot location) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Confirmación'),
+          content: Text('¿Seguro quieres borrar este punto de interés?'),
+          actions: [
+            TextButton(
+              child: Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Borrar'),
+              onPressed: () async {
+                await location.reference.delete();
+                Navigator.of(context).pop();
+                setState(() {});
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,15 +222,22 @@ class _MostrarDatosState extends State<MostrarDatos> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: _imageFile != null
-                    ? FileImage(_imageFile!)
-                    : (_imageBytes != null
-                        ? MemoryImage(_imageBytes!)
-                        : (_profileImageUrl != null
-                            ? NetworkImage(_profileImageUrl!)
-                            : AssetImage('lib/images/PerfilUser.png'))) as ImageProvider,
+              GestureDetector(
+                onTap: () {
+                  if (_profileImageUrl != null) {
+                    _showProfileImageDialog(_profileImageUrl!);
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _imageFile != null
+                      ? FileImage(_imageFile!)
+                      : (_imageBytes != null
+                          ? MemoryImage(_imageBytes!)
+                          : (_profileImageUrl != null
+                              ? NetworkImage(_profileImageUrl!)
+                              : AssetImage('lib/images/PerfilUser.png'))) as ImageProvider,
+                ),
               ),
               TextButton(
                 onPressed: _pickImage,
@@ -141,6 +260,65 @@ class _MostrarDatosState extends State<MostrarDatos> {
                 onPressed: _saveChanges,
                 child: Text('Guardar cambios'),
               ),
+              SizedBox(height: 20),
+              Text(
+                'Mis Ubicaciones',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              FutureBuilder<List<DocumentSnapshot>>(
+                future: _getUserLocations(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Error al cargar las ubicaciones');
+                  }
+                  final locations = snapshot.data!;
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: locations.length,
+                    itemBuilder: (context, index) {
+                      final location = locations[index];
+                      final name = location['name'] ?? 'Sin nombre';
+                      final category = location['category'] ?? 'Sin categoría';
+                      final subcategory = location['subcategory'] ?? 'Sin subcategoría';
+                      final imageUrl = location['imageUrl'] ?? '';
+                      final coordinates = location['coordinates'] as GeoPoint;
+
+                      return Card(
+                        margin: EdgeInsets.symmetric(vertical: 10),
+                        child: ListTile(
+                          title: Text(name),
+                          subtitle: Text('$category - $subcategory'),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.image),
+                                onPressed: () => _showImageDialog(imageUrl),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.map),
+                                onPressed: () => _navigateToLocation(
+                                  LatLng(coordinates.latitude, coordinates.longitude),
+                                  category,
+                                  subcategory,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete),
+                                onPressed: () => _showDeleteConfirmationDialog(location),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -148,6 +326,12 @@ class _MostrarDatosState extends State<MostrarDatos> {
     );
   }
 }
+
+
+
+
+
+
 
 
 
