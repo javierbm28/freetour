@@ -7,8 +7,10 @@ import 'dart:io';
 import 'dart:typed_data'; // Importa este paquete para Uint8List
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mapbox_gl/mapbox_gl.dart';
-import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página del mapa
-import 'package:freetour/pagines/CategoriasFiltros.dart' as cat; // Importa categorías y filtros
+import 'FilterableMap.dart'; // Importa la página del mapa
+import 'CategoriasFiltros.dart' as cat; // Importa categorías y filtros
+import 'EditableFollowersList.dart';
+import 'EditableFollowingList.dart';
 
 class MostrarDatos extends StatefulWidget {
   @override
@@ -25,12 +27,16 @@ class _MostrarDatosState extends State<MostrarDatos> {
   File? _imageFile;
   Uint8List? _imageBytes; // Para web
   final picker = ImagePicker();
+  int followersCount = 0;
+  int followingCount = 0;
 
   @override
   void initState() {
     super.initState();
     user = _auth.currentUser!;
     _loadUserData();
+    _getFollowersCount();
+    _getFollowingCount();
   }
 
   Future<void> _loadUserData() async {
@@ -41,6 +47,30 @@ class _MostrarDatosState extends State<MostrarDatos> {
     _apodoController.text = data['apodo'];
     setState(() {
       _profileImageUrl = data['fotoPerfil'];
+    });
+  }
+
+  Future<void> _getFollowersCount() async {
+    final followersSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('followers')
+        .get();
+
+    setState(() {
+      followersCount = followersSnapshot.docs.length;
+    });
+  }
+
+  Future<void> _getFollowingCount() async {
+    final followingSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('following')
+        .get();
+
+    setState(() {
+      followingCount = followingSnapshot.docs.length;
     });
   }
 
@@ -129,6 +159,22 @@ class _MostrarDatosState extends State<MostrarDatos> {
           initialPosition: coordinates,
           zoomLevel: 20.0, // Usar parámetro correcto
         ),
+      ),
+    );
+  }
+
+  void _navigateToEditableFollowers(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditableFollowersList(userId: user.uid),
+      ),
+    );
+  }
+
+  void _navigateToEditableFollowing(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditableFollowingList(userId: user.uid),
       ),
     );
   }
@@ -243,6 +289,7 @@ class _MostrarDatosState extends State<MostrarDatos> {
                 onPressed: _pickImage,
                 child: Text('Cambiar foto de perfil'),
               ),
+              SizedBox(height: 20),
               TextField(
                 controller: _nombreController,
                 decoration: InputDecoration(labelText: 'Nombre'),
@@ -260,7 +307,31 @@ class _MostrarDatosState extends State<MostrarDatos> {
                 onPressed: _saveChanges,
                 child: Text('Guardar cambios'),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => _navigateToEditableFollowers(context),
+                    child: Column(
+                      children: [
+                        Text('$followersCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Seguidores', style: TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _navigateToEditableFollowing(context),
+                    child: Column(
+                      children: [
+                        Text('$followingCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Seguidos', style: TextStyle(fontSize: 16)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 30),
               Text(
                 'Mis Ubicaciones',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
@@ -326,6 +397,8 @@ class _MostrarDatosState extends State<MostrarDatos> {
     );
   }
 }
+
+
 
 
 
