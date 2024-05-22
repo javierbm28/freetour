@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
-import 'package:freetour/pagines/FilterableMap.dart';
-import 'package:freetour/pagines/CategoriasFiltros.dart';
+import 'FilterableMap.dart';
+import 'CategoriasFiltros.dart';
+import 'MostrarDatos.dart';
 
 class VerPerfil extends StatefulWidget {
   final String? userId;
@@ -215,12 +216,25 @@ class _VerPerfilState extends State<VerPerfil> {
     );
   }
 
+  void _navigateToEditProfile(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => MostrarDatos()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Perfil del Usuario"),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        actions: [
+          if (currentUserId == widget.userId)
+            IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () => _navigateToEditProfile(context),
+            ),
+        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: _getUserData(),
@@ -453,6 +467,7 @@ class FollowersOrFollowingList extends StatelessWidget {
     );
   }
 }
+
 
 
 

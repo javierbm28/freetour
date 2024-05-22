@@ -6,6 +6,7 @@ import 'package:freetour/pagines/MostrarDatos.dart'; // Asegúrate de que esta e
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
 import 'package:video_player/video_player.dart';
+import 'verPerfil.dart';
 
 class PaginaInici extends StatefulWidget {
   const PaginaInici({Key? key}) : super(key: key);
@@ -43,6 +44,25 @@ class _PaginaIniciState extends State<PaginaInici> {
     );
   }
 
+  void _navigateToProfile() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerPerfil(userId: user.uid, userEmail: user.email!),
+        ),
+      );
+    }
+  }
+
+  void _navigateToEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MostrarDatos()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
@@ -55,12 +75,7 @@ class _PaginaIniciState extends State<PaginaInici> {
           backgroundColor: const Color.fromARGB(255, 63, 214, 63),
           actions: [
             IconButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => MostrarDatos()),
-                );
-              },
+              onPressed: _navigateToProfile,
               icon: const Icon(Icons.person),
             ),
             IconButton(
