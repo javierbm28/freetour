@@ -26,21 +26,30 @@ class _VerPerfilState extends State<VerPerfil> {
   void initState() {
     super.initState();
     currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    _checkIfFollowing();
-    _getFollowersCount();
-    _getFollowingCount();
+    _fetchData();
   }
 
-  Future<DocumentSnapshot> _getUserData() async {
+  Future<void> _fetchData() async {
+  await _getUserData();
+  await _checkIfFollowing();
+  await _getFollowersCount();
+  await _getFollowingCount();
+  setState(() {}); // Refresh the UI with updated data
+}
+
+  Future<DocumentSnapshot?> _getUserData() async {
     if (widget.userId != null) {
       return FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
     } else {
-      return FirebaseFirestore.instance
+      final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: widget.userEmail)
           .limit(1)
-          .get()
-          .then((snapshot) => snapshot.docs.first);
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        return querySnapshot.docs.first;
+      }
+      return null;
     }
   }
 
@@ -53,47 +62,47 @@ class _VerPerfilState extends State<VerPerfil> {
   }
 
   Future<void> _checkIfFollowing() async {
-    if (currentUserId != null) {
-      final followDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUserId)
-          .collection('following')
-          .doc(widget.userId)
-          .get();
+  if (currentUserId != null && widget.userId != null) {
+    final followDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUserId)
+        .collection('following')
+        .doc(widget.userId)
+        .get();
 
-      setState(() {
-        isFollowing = followDoc.exists;
-      });
-    }
+    setState(() {
+      isFollowing = followDoc.exists;
+    });
   }
+}
 
   Future<void> _getFollowersCount() async {
-    if (widget.userId != null) {
-      final followersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .collection('followers')
-          .get();
+  if (widget.userId != null) {
+    final followersSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('followers')
+        .get();
 
-      setState(() {
-        followersCount = followersSnapshot.docs.length;
-      });
-    }
+    setState(() {
+      followersCount = followersSnapshot.docs.length;
+    });
   }
+}
 
-  Future<void> _getFollowingCount() async {
-    if (widget.userId != null) {
-      final followingSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .collection('following')
-          .get();
+ Future<void> _getFollowingCount() async {
+  if (widget.userId != null) {
+    final followingSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.userId)
+        .collection('following')
+        .get();
 
-      setState(() {
-        followingCount = followingSnapshot.docs.length;
-      });
-    }
+    setState(() {
+      followingCount = followingSnapshot.docs.length;
+    });
   }
+}
 
   void _navigateToLocation(BuildContext context, LatLng coordinates, String category, String subcategory) {
     // Activar filtros
@@ -180,20 +189,24 @@ class _VerPerfilState extends State<VerPerfil> {
         await followedUserDocRef.collection('followers').doc(currentUserId).delete();
       } else {
         final followedUserData = await followedUserDocRef.get();
-        await currentUserDocRef.collection('following').doc(widget.userId).set({
-          'userId': widget.userId,
-          'userEmail': widget.userEmail,
-          'userApodo': followedUserData['apodo'],
-          'userProfileImage': followedUserData['fotoPerfil'],
-        });
+        if (followedUserData.exists) {
+          await currentUserDocRef.collection('following').doc(widget.userId).set({
+            'userId': widget.userId,
+            'userEmail': widget.userEmail,
+            'userApodo': followedUserData['apodo'],
+            'userProfileImage': followedUserData['fotoPerfil'],
+          });
 
-        final currentUserData = await currentUserDocRef.get();
-        await followedUserDocRef.collection('followers').doc(currentUserId).set({
-          'userId': currentUserId,
-          'userEmail': currentUserData['email'],
-          'userApodo': currentUserData['apodo'],
-          'userProfileImage': currentUserData['fotoPerfil'],
-        });
+          final currentUserData = await currentUserDocRef.get();
+          if (currentUserData.exists) {
+            await followedUserDocRef.collection('followers').doc(currentUserId).set({
+              'userId': currentUserId,
+              'userEmail': currentUserData['email'],
+              'userApodo': currentUserData['apodo'],
+              'userProfileImage': currentUserData['fotoPerfil'],
+            });
+          }
+        }
       }
 
       setState(() {
@@ -236,7 +249,7 @@ class _VerPerfilState extends State<VerPerfil> {
             ),
         ],
       ),
-      body: FutureBuilder<DocumentSnapshot>(
+      body: FutureBuilder<DocumentSnapshot?>(
         future: _getUserData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -245,7 +258,7 @@ class _VerPerfilState extends State<VerPerfil> {
           if (snapshot.hasError) {
             return Center(child: Text('Error al cargar los datos del usuario'));
           }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
             return Center(child: Text('Usuario no encontrado'));
           }
 
@@ -328,14 +341,16 @@ class _VerPerfilState extends State<VerPerfil> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 20),
-                          ElevatedButton(
-                            onPressed: currentUserId != null && currentUserId != widget.userId ? _followUser : null,
-                            child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isFollowing ? Colors.grey : Colors.blue,
+                          if (currentUserId != widget.userId) // Prevent follow button for own profile
+                            SizedBox(height: 20),
+                          if (currentUserId != widget.userId)
+                            ElevatedButton(
+                              onPressed: currentUserId != null ? _followUser : null,
+                              child: Text(isFollowing ? 'Siguiendo' : 'Seguir'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isFollowing ? Colors.grey : Colors.blue,
+                              ),
                             ),
-                          ),
                           SizedBox(height: 20),
                           Text(
                             'Ubicaciones de $apodo',

@@ -5,9 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:freetour/pagines/CrearNuevaUbicacion.dart';
 import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
-import 'package:freetour/pagines/UbicacionesGuardadas.dart'; // Importa la nueva página
-import 'package:freetour/pagines/Pagina_Inici.dart'; // Importa la página de inicio
-import 'package:freetour/pagines/VerPerfil.dart'; // Importa la nueva página VerPerfil
+import 'package:freetour/pagines/UbicacionesGuardadas.dart';
+import 'package:freetour/pagines/Pagina_Inici.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -16,10 +15,9 @@ import 'dart:math';
 
 class FilterableMap extends StatefulWidget {
   final LatLng? initialPosition;
-  final double zoomLevel; // Agregar el parámetro zoomLevel
+  final double zoomLevel;
 
-  FilterableMap({this.initialPosition, this.zoomLevel = 14.0}); // Añadir zoomLevel con valor por defecto
-
+  FilterableMap({this.initialPosition, this.zoomLevel = 14.0});
   @override
   _FilterableMapState createState() => _FilterableMapState();
 }
@@ -56,7 +54,8 @@ class _FilterableMapState extends State<FilterableMap> {
   void _onStyleLoaded() {
     _requestLocationPermission();
     if (widget.initialPosition != null) {
-      mapController?.animateCamera(CameraUpdate.newLatLngZoom(widget.initialPosition!, widget.zoomLevel)); // Usar zoomLevel
+      mapController?.animateCamera(CameraUpdate.newLatLngZoom(
+          widget.initialPosition!, widget.zoomLevel)); // Usar zoomLevel
       _updateMap();
     }
   }
@@ -74,7 +73,8 @@ class _FilterableMapState extends State<FilterableMap> {
   DateTime? lastTap;
   void _onMapClicked(Point<double> point, LatLng latLng) async {
     final DateTime now = DateTime.now();
-    if (lastTap != null && now.difference(lastTap!) < Duration(milliseconds: 500)) {
+    if (lastTap != null &&
+        now.difference(lastTap!) < Duration(milliseconds: 500)) {
       lastTapLatLng = latLng;
       Navigator.of(context).push(MaterialPageRoute(
         builder: (context) => CrearNuevaUbicacion(
@@ -95,7 +95,8 @@ class _FilterableMapState extends State<FilterableMap> {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('locations')
         .where('coordinates',
-            isEqualTo: GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
+            isEqualTo:
+                GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
         .get();
 
     if (querySnapshot.docs.isNotEmpty) {
@@ -104,15 +105,13 @@ class _FilterableMapState extends State<FilterableMap> {
       String category = doc['category'];
       String subcategory = doc['subcategory'];
       String imageUrl = doc['imageUrl'];
-      String userApodo = doc['userApodo'];
-      String userEmail = doc['userEmail'];
-      String? userId = (doc.data() as Map<String, dynamic>?)?.containsKey('userId') == true ? doc['userId'] : null;
 
-      _showLocationInfo(name, category, subcategory, imageUrl, userApodo, userId, userEmail);
+      _showLocationInfo(name, category, subcategory, imageUrl);
     }
   }
 
-  void _showLocationInfo(String name, String category, String subcategory, String imageUrl, String userApodo, String? userId, String userEmail) {
+  void _showLocationInfo(String name, String category, String subcategory,
+      String imageUrl) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -126,32 +125,13 @@ class _FilterableMapState extends State<FilterableMap> {
               if (imageUrl.isNotEmpty)
                 Image.network(
                   imageUrl,
-                  width: 200, // Ancho estándar
-                  height: 150, // Alto estándar
+                  width: 200,
+                  height: 150,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Icon(Icons.error);
                   },
                 ),
-              SizedBox(height: 10),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).pop(); // Cierra el diálogo actual
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
-                    ),
-                  );
-                },
-                child: Text(
-                  'Creado por: $userApodo',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ),
             ],
           ),
           actions: [
@@ -226,7 +206,8 @@ class _FilterableMapState extends State<FilterableMap> {
       return;
     }
 
-    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+    if (permission == LocationPermission.whileInUse ||
+        permission == LocationPermission.always) {
       _getCurrentLocation();
     }
   }
@@ -267,10 +248,12 @@ class _FilterableMapState extends State<FilterableMap> {
           children: <Widget>[
             Expanded(
               child: MapboxMap(
-                accessToken: "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
+                accessToken:
+                    "pk.eyJ1IjoiamF2aWVyY2Vyb2NhIiwiYSI6ImNsdnBhNG92YzBqd2Iya2sxeXYxeWUyYWkifQ.DSim5b1yxSAJjQioCrMDpQ",
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
-                    target: widget.initialPosition ?? defaultCenter, zoom: widget.zoomLevel), // Usar zoomLevel
+                    target: widget.initialPosition ?? defaultCenter,
+                    zoom: widget.zoomLevel), // Usar zoomLevel
                 onStyleLoadedCallback: _onStyleLoaded,
                 onMapClick: _onMapClicked,
               ),
@@ -296,7 +279,8 @@ class _FilterableMapState extends State<FilterableMap> {
             FloatingActionButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => UbicacionesGuardadas(), // Navegar a la nueva página
+                  builder: (context) =>
+                      UbicacionesGuardadas(), // Navegar a la nueva página
                 ),
               ),
               child: Icon(Icons.list),
@@ -305,7 +289,8 @@ class _FilterableMapState extends State<FilterableMap> {
             FloatingActionButton(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => PaginaInici(), // Navegar a la página de inicio
+                  builder: (context) =>
+                      PaginaInici(), // Navegar a la página de inicio
                 ),
               ),
               child: Icon(Icons.home),
@@ -316,17 +301,3 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
