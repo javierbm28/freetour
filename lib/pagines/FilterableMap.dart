@@ -7,11 +7,15 @@ import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
 import 'package:freetour/pagines/UbicacionesGuardadas.dart';
 import 'package:freetour/pagines/Pagina_Inici.dart';
+import 'package:freetour/pagines/CrearNuevoEvento.dart';
+import 'package:freetour/pagines/ListaEventos.dart';
+import 'package:freetour/pagines/DetalleEvento.dart'; // Importar DetalleEvento
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
 import 'dart:ui';
 import 'dart:math';
+import 'package:intl/intl.dart';
 
 class FilterableMap extends StatefulWidget {
   final LatLng? initialPosition;
@@ -28,6 +32,8 @@ class _FilterableMapState extends State<FilterableMap> {
   Symbol? lastAddedSymbol;
   LatLng? lastTapLatLng;
   List<Category> activeFilters = categories;
+  bool showEvents = false; // Iniciar con eventos ocultos
+  bool isMapLoaded = false;
 
   TextEditingController nameController = TextEditingController();
   String? selectedType;
@@ -36,13 +42,23 @@ class _FilterableMapState extends State<FilterableMap> {
   void initState() {
     super.initState();
     _loadPointerImage();
+    _loadEventsImage();
   }
 
   void _onMapCreated(MapboxMapController controller) {
     mapController = controller;
     _loadImageFromAssets();
     _loadPointerImage();
+    _loadEventsImage();
     mapController!.onSymbolTapped.add(_onSymbolTapped);
+    if (widget.initialPosition != null) {
+      mapController?.animateCamera(CameraUpdate.newLatLngZoom(
+          widget.initialPosition!, widget.zoomLevel));
+      _addEventSymbol(widget.initialPosition!);
+    }
+    setState(() {
+      isMapLoaded = true;
+    });
   }
 
   Future<void> _loadImageFromAssets() async {
@@ -70,22 +86,66 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
+  Future<void> _loadEventsImage() async {
+    try {
+      final ByteData bytes = await rootBundle.load('lib/images/evento.png');
+      final Uint8List list = bytes.buffer.asUint8List();
+      await mapController!.addImage('evento', list);
+    } catch (e) {
+      print('Error loading event image: $e');
+    }
+  }
+
   DateTime? lastTap;
   void _onMapClicked(Point<double> point, LatLng latLng) async {
     final DateTime now = DateTime.now();
     if (lastTap != null &&
         now.difference(lastTap!) < Duration(milliseconds: 500)) {
       lastTapLatLng = latLng;
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => CrearNuevaUbicacion(
-          latLng: latLng,
-          onLocationSaved: _onLocationSaved,
-        ),
-      ));
+      _showCreationDialog(context, latLng);
       lastTap = null;
     } else {
       lastTap = now;
     }
+  }
+
+  void _showCreationDialog(BuildContext context, LatLng latLng) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('¿Qué quieres registrar?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                title: Text('Agregar una ubicación'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => CrearNuevaUbicacion(
+                      latLng: latLng,
+                      onLocationSaved: _onLocationSaved,
+                    ),
+                  ));
+                },
+              ),
+              ListTile(
+                title: Text('Agregar un evento'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => CrearNuevoEvento(
+                      latLng: latLng,
+                    ),
+                  ));
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _onSymbolTapped(Symbol symbol) async {
@@ -93,34 +153,33 @@ class _FilterableMapState extends State<FilterableMap> {
     if (symbolLocation == null) return;
 
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('locations')
+        .collection('events')
         .where('coordinates',
             isEqualTo:
                 GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
         .get();
-
     if (querySnapshot.docs.isNotEmpty) {
       DocumentSnapshot doc = querySnapshot.docs.first;
-      String name = doc['name'];
-      String category = doc['category'];
-      String subcategory = doc['subcategory'];
+      String eventId = doc.id;
+      String title = doc['title'];
+      DateTime dateTime = (doc['dateTime'] as Timestamp).toDate();
       String imageUrl = doc['imageUrl'];
 
-      _showLocationInfo(name, category, subcategory, imageUrl);
+      _showEventInfo(eventId, title, dateTime, imageUrl);
     }
   }
 
-  void _showLocationInfo(String name, String category, String subcategory,
-      String imageUrl) {
+  void _showEventInfo(
+      String eventId, String title, DateTime dateTime, String imageUrl) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text(name),
+          title: Text(title),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('$category - $subcategory'),
+              Text(DateFormat.yMd().add_jm().format(dateTime)),
               SizedBox(height: 10),
               if (imageUrl.isNotEmpty)
                 Image.network(
@@ -135,6 +194,18 @@ class _FilterableMapState extends State<FilterableMap> {
             ],
           ),
           actions: [
+            TextButton(
+              child: Text('Ver evento'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetalleEvento(eventId: eventId),
+                  ),
+                );
+              },
+            ),
             TextButton(
               child: Text('Cerrar'),
               onPressed: () {
@@ -157,10 +228,25 @@ class _FilterableMapState extends State<FilterableMap> {
     });
   }
 
+  void _addEventSymbol(LatLng latLng) {
+    if (mapController != null && isMapLoaded) {
+      setState(() {
+        mapController?.addSymbol(SymbolOptions(
+          geometry: latLng,
+          iconImage: 'evento',
+          iconSize: 0.1,
+        ));
+      });
+    } else {
+      print('MapController is not initialized');
+    }
+  }
+
   void _updateMap() {
     if (mapController == null) return;
 
     mapController!.clearSymbols();
+    // Cargar ubicaciones
     for (var category in activeFilters) {
       for (var subcategory in category.subcategories.entries) {
         if (subcategory.value) {
@@ -181,6 +267,23 @@ class _FilterableMapState extends State<FilterableMap> {
           });
         }
       }
+    }
+
+    // Cargar eventos
+    if (showEvents) {
+      FirebaseFirestore.instance
+          .collection('events')
+          .get()
+          .then((querySnapshot) {
+        for (var doc in querySnapshot.docs) {
+          GeoPoint geoPoint = doc['coordinates'];
+          mapController!.addSymbol(SymbolOptions(
+            geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+            iconImage: 'evento', // Asegúrate de cargar un ícono de evento
+            iconSize: 0.1,
+          ));
+        }
+      });
     }
   }
 
@@ -235,6 +338,13 @@ class _FilterableMapState extends State<FilterableMap> {
   void _applyFilters(List<Category> selectedCategories) {
     setState(() {
       activeFilters = selectedCategories;
+    });
+    _updateMap();
+  }
+
+  void _toggleEventsVisibility() {
+    setState(() {
+      showEvents = !showEvents;
     });
     _updateMap();
   }
@@ -295,9 +405,26 @@ class _FilterableMapState extends State<FilterableMap> {
               ),
               child: Icon(Icons.home),
             ),
+            SizedBox(height: 10),
+            FloatingActionButton(
+              onPressed: _toggleEventsVisibility,
+              child: Icon(showEvents ? Icons.visibility : Icons.visibility_off),
+            ),
+            SizedBox(height: 10),
+            FloatingActionButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ListaEventos(), // Navegar a la página de eventos
+                ),
+              ),
+              child: Icon(Icons.event),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
+

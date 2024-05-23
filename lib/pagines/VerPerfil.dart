@@ -10,7 +10,7 @@ class VerPerfil extends StatefulWidget {
   final String? userId;
   final String userEmail;
 
-  VerPerfil({this.userId, required this.userEmail});
+  VerPerfil({this.userId, required this.userEmail});  
 
   @override
   _VerPerfilState createState() => _VerPerfilState();

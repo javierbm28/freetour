@@ -73,6 +73,7 @@ flutter:
     - lib/images/IconUser.png
     - lib/images/Puntero.png
     - lib/images/PerfilUser.png
+    - lib/images/evento.png
     - assets/foto_fondo.jpg
     - lib/images/video_fondo.mp4
     - assets/assets/symbols/custom-icon.png
