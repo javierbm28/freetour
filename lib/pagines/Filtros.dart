@@ -13,6 +13,13 @@ class Filtros extends StatefulWidget {
 class _FiltrosState extends State<Filtros> {
   List<Category> tempCategories = List.from(categories);
 
+  void _toggleCategorySelection(Category category, bool? isSelected) {
+    setState(() {
+      category.isSelected = isSelected!;
+      category.subcategories.updateAll((key, value) => isSelected);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -57,9 +64,21 @@ class _FiltrosState extends State<Filtros> {
                   ),
                   child: ExpansionTile(
                     backgroundColor: Colors.grey, // Fondo gris para las categorías
-                    title: Text(
-                      category.name,
-                      style: TextStyle(color: Colors.white), // Texto en blanco para mejor contraste
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          category.name,
+                          style: TextStyle(color: Colors.white), // Texto en blanco para mejor contraste
+                        ),
+                        Checkbox(
+                          value: category.isSelected,
+                          onChanged: (bool? value) {
+                            _toggleCategorySelection(category, value);
+                          },
+                          activeColor: Color.fromARGB(255, 63, 214, 63),
+                        ),
+                      ],
                     ),
                     initiallyExpanded: true, // Empezar abiertos
                     children: category.subcategories.keys.map((subcat) {
@@ -71,8 +90,15 @@ class _FiltrosState extends State<Filtros> {
                           onChanged: (bool? value) {
                             setState(() {
                               category.subcategories[subcat] = value!;
+                              if (!value) {
+                                category.isSelected = false;
+                              } else {
+                                category.isSelected = category.subcategories.values.every((isSelected) => isSelected);
+                              }
                             });
                           },
+                          activeColor: Color.fromARGB(255, 63, 214, 63),
+                          checkColor: Colors.black,
                         ),
                       );
                     }).toList(),
@@ -86,6 +112,7 @@ class _FiltrosState extends State<Filtros> {
     );
   }
 }
+
 
 
 

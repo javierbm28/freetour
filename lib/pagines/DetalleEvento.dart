@@ -7,6 +7,7 @@ import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página Filt
 import 'package:mapbox_gl/mapbox_gl.dart'; // Importa la librería de Mapbox
 import 'package:flutter/services.dart' show rootBundle; // Importa la librería correcta
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:freetour/pagines/VerPerfil.dart'; // Importa la página VerPerfil
 
 class DetalleEvento extends StatefulWidget {
   final String eventId;
@@ -92,11 +93,33 @@ class _DetalleEventoState extends State<DetalleEvento> {
     _loadParticipants();
   }
 
+  void _navigateToCreatorProfile(String userEmail) async {
+    // Fetch the creator's user document using their email
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: userEmail)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      final userDoc = querySnapshot.docs.first;
+      final userId = userDoc.id;
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Detalle del Evento'),
+        backgroundColor: Color.fromARGB(255, 63, 214, 63),
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance.collection('events').doc(widget.eventId).get(),
@@ -109,65 +132,103 @@ class _DetalleEventoState extends State<DetalleEvento> {
           DateTime dateTime = (data['dateTime'] as Timestamp).toDate();
           GeoPoint geoPoint = data['coordinates'];
 
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ListView(
-              children: <Widget>[
-                if (data['imageUrl'] != null)
-                  Image.network(
-                    data['imageUrl'],
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
-                  ),
-                SizedBox(height: 16.0),
-                Text(data['title'], style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8.0),
-                Text(DateFormat.yMd().add_jm().format(dateTime), style: TextStyle(fontSize: 16.0)),
-                SizedBox(height: 8.0),
-                Text('Creado por: ${data['createdBy']}', style: TextStyle(fontSize: 16.0)),
-                SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: _toggleParticipation,
-                  child: Text(isParticipating ? 'Desapuntarse' : 'Apuntarse'),
-                ),
-                SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FilterableMap(
-                          initialPosition: LatLng(geoPoint.latitude, geoPoint.longitude),
-                          zoomLevel: 16.0, // Ajusta el nivel de zoom según sea necesario
+          return SingleChildScrollView(
+            child: Container(
+              color: Colors.grey[200],
+              padding: const EdgeInsets.all(16.0),
+              child: Center(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    if (data['imageUrl'] != null)
+                      Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Image.network(
+                          data['imageUrl'],
+                          width: double.infinity,
+                          height: 250,
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    );
-                  },
-                  child: Text('Mostrar ubicación'),
-                ),
-                SizedBox(height: 16.0),
-                Text('Descripción', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8.0),
-                _buildDescription(data['description']),
-                SizedBox(height: 16.0),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ListaParticipantes(eventId: widget.eventId),
+                    SizedBox(height: 16.0),
+                    Text(data['title'], style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8.0),
+                    Text(DateFormat.yMd().add_jm().format(dateTime), style: TextStyle(fontSize: 16.0)),
+                    SizedBox(height: 8.0),
+                    GestureDetector(
+                      onTap: () => _navigateToCreatorProfile(data['createdByEmail']),
+                      child: Text(
+                        'Creado por: ${data['createdBy']}',
+                        style: TextStyle(fontSize: 16.0, color: Colors.blue),
                       ),
-                    );
-                  },
-                  child: Text(
-                    'Participan: $participantCount personas',
-                    style: TextStyle(fontSize: 16.0, color: Colors.blue),
-                  ),
+                    ),
+                    SizedBox(height: 16.0),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _toggleParticipation,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 5,
+                            shadowColor: Colors.grey,
+                          ),
+                          child: Text(isParticipating ? 'Desapuntarse' : 'Apuntarse'),
+                        ),
+                        SizedBox(width: 10.0),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FilterableMap(
+                                  initialPosition: LatLng(geoPoint.latitude, geoPoint.longitude),
+                                  zoomLevel: 16.0, // Ajusta el nivel de zoom según sea necesario
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey,
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 5,
+                            shadowColor: Colors.grey,
+                          ),
+                          child: Text('Mostrar ubicación'),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 16.0),
+                    Text('Descripción', style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8.0),
+                    _buildDescription(data['description']),
+                    SizedBox(height: 16.0),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ListaParticipantes(eventId: widget.eventId),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Participan: $participantCount personas',
+                        style: TextStyle(fontSize: 16.0, color: Colors.blue),
+                      ),
+                    ),
+                    SizedBox(height: 16.0),
+                    // _buildParticipantsList(),
+                  ],
                 ),
-                SizedBox(height: 16.0),
-                // _buildParticipantsList(),
-              ],
+              ),
             ),
           );
         },
@@ -198,22 +259,8 @@ class _DetalleEventoState extends State<DetalleEvento> {
       ],
     );
   }
-
-  // Widget _buildParticipantsList() {
-  //   return Column(
-  //     children: participants.map((participant) {
-  //       return ListTile(
-  //         leading: participant['profileImage'] != null && participant['profileImage'].isNotEmpty
-  //             ? CircleAvatar(
-  //                 backgroundImage: NetworkImage(participant['profileImage']),
-  //               )
-  //             : Icon(Icons.person),
-  //         title: Text(participant['name']),
-  //       );
-  //     }).toList(),
-  //   );
-  // }
 }
+
 
 
 

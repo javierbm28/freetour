@@ -5,12 +5,15 @@ import 'package:mapbox_gl/mapbox_gl.dart';
 import 'FilterableMap.dart';
 import 'CategoriasFiltros.dart';
 import 'MostrarDatos.dart';
+import 'ListaUbicaciones.dart';
+import 'ListaEventosUsuario.dart';
+import 'DetalleEvento.dart';
 
 class VerPerfil extends StatefulWidget {
   final String? userId;
   final String userEmail;
 
-  VerPerfil({this.userId, required this.userEmail});  
+  VerPerfil({this.userId, required this.userEmail});
 
   @override
   _VerPerfilState createState() => _VerPerfilState();
@@ -21,6 +24,7 @@ class _VerPerfilState extends State<VerPerfil> {
   String? currentUserId;
   int followersCount = 0;
   int followingCount = 0;
+  int eventsCount = 0;
 
   @override
   void initState() {
@@ -30,12 +34,13 @@ class _VerPerfilState extends State<VerPerfil> {
   }
 
   Future<void> _fetchData() async {
-  await _getUserData();
-  await _checkIfFollowing();
-  await _getFollowersCount();
-  await _getFollowingCount();
-  setState(() {}); // Refresh the UI with updated data
-}
+    await _getUserData();
+    await _checkIfFollowing();
+    await _getFollowersCount();
+    await _getFollowingCount();
+    await _getEventsCount();
+    setState(() {}); // Refresh the UI with updated data
+  }
 
   Future<DocumentSnapshot?> _getUserData() async {
     if (widget.userId != null) {
@@ -62,50 +67,60 @@ class _VerPerfilState extends State<VerPerfil> {
   }
 
   Future<void> _checkIfFollowing() async {
-  if (currentUserId != null && widget.userId != null) {
-    final followDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUserId)
-        .collection('following')
-        .doc(widget.userId)
-        .get();
+    if (currentUserId != null && widget.userId != null) {
+      final followDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .collection('following')
+          .doc(widget.userId)
+          .get();
 
-    setState(() {
-      isFollowing = followDoc.exists;
-    });
+      setState(() {
+        isFollowing = followDoc.exists;
+      });
+    }
   }
-}
 
   Future<void> _getFollowersCount() async {
-  if (widget.userId != null) {
-    final followersSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .collection('followers')
+    if (widget.userId != null) {
+      final followersSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('followers')
+          .get();
+
+      setState(() {
+        followersCount = followersSnapshot.docs.length;
+      });
+    }
+  }
+
+  Future<void> _getFollowingCount() async {
+    if (widget.userId != null) {
+      final followingSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('following')
+          .get();
+
+      setState(() {
+        followingCount = followingSnapshot.docs.length;
+      });
+    }
+  }
+
+  Future<void> _getEventsCount() async {
+    final eventsSnapshot = await FirebaseFirestore.instance
+        .collection('events')
+        .where('createdByEmail', isEqualTo: widget.userEmail)
         .get();
 
     setState(() {
-      followersCount = followersSnapshot.docs.length;
+      eventsCount = eventsSnapshot.docs.length;
     });
   }
-}
-
- Future<void> _getFollowingCount() async {
-  if (widget.userId != null) {
-    final followingSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.userId)
-        .collection('following')
-        .get();
-
-    setState(() {
-      followingCount = followingSnapshot.docs.length;
-    });
-  }
-}
 
   void _navigateToLocation(BuildContext context, LatLng coordinates, String category, String subcategory) {
-    // Activar filtros
     for (var catCategory in categories) {
       if (catCategory.name == category) {
         for (var subcatKey in catCategory.subcategories.keys) {
@@ -136,7 +151,7 @@ class _VerPerfilState extends State<VerPerfil> {
           backgroundColor: Colors.black,
           body: GestureDetector(
             onTap: () {
-              Navigator.of(context).pop(); // Cerrar el diálogo de pantalla completa
+              Navigator.of(context).pop();
             },
             child: Center(
               child: Image.network(
@@ -235,6 +250,18 @@ class _VerPerfilState extends State<VerPerfil> {
     );
   }
 
+  void _navigateToLocationsList(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => ListaUbicaciones(userEmail: widget.userEmail)),
+    );
+  }
+
+  void _navigateToUserEvents(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => ListaEventosUsuario(userEmail: widget.userEmail)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -315,11 +342,23 @@ class _VerPerfilState extends State<VerPerfil> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Column(
-                                children: [
-                                  Text('$reviewsCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                  Text('Ubicaciones', style: TextStyle(fontSize: 16)),
-                                ],
+                              GestureDetector(
+                                onTap: () => _navigateToLocationsList(context), // Corregido
+                                child: Column(
+                                  children: [
+                                    Text('$reviewsCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    Text('Ubicaciones', style: TextStyle(fontSize: 16)),
+                                  ],
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _navigateToUserEvents(context), // Agregado
+                                child: Column(
+                                  children: [
+                                    Text('$eventsCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                                    Text('Eventos', style: TextStyle(fontSize: 16)),
+                                  ],
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => _navigateToFollowersOrFollowing(context, true),
@@ -352,49 +391,6 @@ class _VerPerfilState extends State<VerPerfil> {
                               ),
                             ),
                           SizedBox(height: 20),
-                          Text(
-                            'Ubicaciones de $apodo',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: locations.length,
-                            itemBuilder: (context, index) {
-                              final location = locations[index];
-                              final name = location['name'] ?? 'Sin nombre';
-                              final category = location['category'] ?? 'Sin categoría';
-                              final subcategory = location['subcategory'] ?? 'Sin subcategoría';
-                              final imageUrl = location['imageUrl'] ?? '';
-                              final coordinates = location['coordinates'] as GeoPoint;
-
-                              return Card(
-                                margin: EdgeInsets.symmetric(vertical: 10),
-                                child: ListTile(
-                                  title: Text(name),
-                                  subtitle: Text('$category - $subcategory'),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.image),
-                                        onPressed: () => _showImageDialog(context, imageUrl),
-                                      ),
-                                      IconButton(
-                                        icon: Icon(Icons.map),
-                                        onPressed: () => _navigateToLocation(
-                                          context,
-                                          LatLng(coordinates.latitude, coordinates.longitude),
-                                          category,
-                                          subcategory,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
                         ],
                       );
                     },
@@ -482,6 +478,21 @@ class FollowersOrFollowingList extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

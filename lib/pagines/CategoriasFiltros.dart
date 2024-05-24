@@ -1,10 +1,12 @@
 class Category {
   String name;
   Map<String, bool> subcategories;
+  bool isSelected;
 
   Category(this.name, List<String> subcategories)
       : this.subcategories = Map.fromIterable(subcategories,
-            key: (subcat) => subcat, value: (subcat) => false);
+            key: (subcat) => subcat, value: (subcat) => false),
+        this.isSelected = false;
 
   bool isVisible() => subcategories.values.any((v) => v);
 }
@@ -15,3 +17,4 @@ List<Category> categories = [
   Category("Compras", ["Supermercado", "Belleza", "Concesionarios", "Centro comerciales", "Electronica"]),
   Category("Servicios", ["Hoteles", "Alquiler de coche", "Gasolinerias", "Estaciones de recarga", "Aparcamientos", "Hospitales y clinicas", "Farmacias"]),
 ];
+

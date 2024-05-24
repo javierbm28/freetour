@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'VerPerfil.dart';
 
 class EditableFollowersList extends StatelessWidget {
@@ -72,15 +71,28 @@ class EditableFollowersList extends StatelessWidget {
               final userProfileImage = user['userProfileImage'];
 
               return ListTile(
+                contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 leading: GestureDetector(
                   onTap: () => _navigateToProfile(context, userId, userEmail),
                   child: CircleAvatar(
-                    backgroundImage: userProfileImage != null ? NetworkImage(userProfileImage) : null,
+                    radius: 30,
+                    backgroundImage: AssetImage('lib/images/PerfilUser.png'),
+                    child: FadeInImage.assetNetwork(
+                      placeholder: 'lib/images/PerfilUser.png',
+                      image: userProfileImage,
+                      fit: BoxFit.cover,
+                      imageErrorBuilder: (context, error, stackTrace) {
+                        return Image.asset('lib/images/PerfilUser.png', fit: BoxFit.cover);
+                      },
+                    ),
                   ),
                 ),
                 title: GestureDetector(
                   onTap: () => _navigateToProfile(context, userId, userEmail),
-                  child: Text(userApodo),
+                  child: Text(
+                    userApodo,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                 ),
                 trailing: IconButton(
                   icon: Icon(Icons.remove_circle),
@@ -98,4 +110,3 @@ class EditableFollowersList extends StatelessWidget {
     );
   }
 }
-

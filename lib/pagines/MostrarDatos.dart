@@ -1,5 +1,5 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,6 +11,8 @@ import 'FilterableMap.dart'; // Importa la página del mapa
 import 'CategoriasFiltros.dart' as cat; // Importa categorías y filtros
 import 'EditableFollowersList.dart';
 import 'EditableFollowingList.dart';
+import 'EditableLocationsList.dart'; // Nueva página para editar ubicaciones
+import 'EditableEventsList.dart'; // Nueva página para editar eventos
 
 class MostrarDatos extends StatefulWidget {
   @override
@@ -29,6 +31,7 @@ class _MostrarDatosState extends State<MostrarDatos> {
   final picker = ImagePicker();
   int followersCount = 0;
   int followingCount = 0;
+  final String _defaultProfileImage = 'lib/images/PerfilUser.png';
 
   @override
   void initState() {
@@ -131,36 +134,16 @@ class _MostrarDatosState extends State<MostrarDatos> {
     Navigator.pop(context);
   }
 
-  Future<List<DocumentSnapshot>> _getUserLocations() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('locations')
-        .where('userEmail', isEqualTo: user.email)
-        .get();
-    return snapshot.docs;
-  }
+  Future<void> _removeProfileImage() async {
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'fotoPerfil': null,
+    });
 
-  void _navigateToLocation(LatLng coordinates, String category, String subcategory) {
-    // Activar filtros
-    for (var catCategory in cat.categories) {
-      if (catCategory.name == category) {
-        for (var subcatKey in catCategory.subcategories.keys) {
-          catCategory.subcategories[subcatKey] = subcatKey == subcategory;
-        }
-      } else {
-        for (var subcatKey in catCategory.subcategories.keys) {
-          catCategory.subcategories[subcatKey] = false;
-        }
-      }
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => FilterableMap(
-          initialPosition: coordinates,
-          zoomLevel: 20.0, // Usar parámetro correcto
-        ),
-      ),
-    );
+    setState(() {
+      _profileImageUrl = null;
+      _imageFile = null;
+      _imageBytes = null;
+    });
   }
 
   void _navigateToEditableFollowers(BuildContext context) {
@@ -175,6 +158,22 @@ class _MostrarDatosState extends State<MostrarDatos> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => EditableFollowingList(userId: user.uid),
+      ),
+    );
+  }
+
+  void _navigateToEditableLocations(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditableLocationsList(userEmail: user.email!),
+      ),
+    );
+  }
+
+  void _navigateToEditableEvents(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditableEventsList(userEmail: user.email!),
       ),
     );
   }
@@ -199,58 +198,6 @@ class _MostrarDatosState extends State<MostrarDatos> {
               ),
             ),
           ),
-        );
-      },
-    );
-  }
-
-  void _showImageDialog(String imageUrl) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: Image.network(
-            imageUrl,
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.error);
-            },
-          ),
-          actions: [
-            TextButton(
-              child: Text('Cerrar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirmationDialog(DocumentSnapshot location) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Confirmación'),
-          content: Text('¿Seguro quieres borrar este punto de interés?'),
-          actions: [
-            TextButton(
-              child: Text('Cancelar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Borrar'),
-              onPressed: () async {
-                await location.reference.delete();
-                Navigator.of(context).pop();
-                setState(() {});
-              },
-            ),
-          ],
         );
       },
     );
@@ -282,13 +229,18 @@ class _MostrarDatosState extends State<MostrarDatos> {
                           ? MemoryImage(_imageBytes!)
                           : (_profileImageUrl != null
                               ? NetworkImage(_profileImageUrl!)
-                              : AssetImage('lib/images/PerfilUser.png'))) as ImageProvider,
+                              : AssetImage(_defaultProfileImage))) as ImageProvider,
                 ),
               ),
               TextButton(
                 onPressed: _pickImage,
                 child: Text('Cambiar foto de perfil'),
               ),
+              if (_profileImageUrl != null && _profileImageUrl != _defaultProfileImage)
+                TextButton(
+                  onPressed: _removeProfileImage,
+                  child: Text('Eliminar foto'),
+                ),
               SizedBox(height: 20),
               TextField(
                 controller: _nombreController,
@@ -332,63 +284,28 @@ class _MostrarDatosState extends State<MostrarDatos> {
                 ],
               ),
               SizedBox(height: 30),
-              Text(
-                'Mis Ubicaciones',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              FutureBuilder<List<DocumentSnapshot>>(
-                future: _getUserLocations(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
-                  if (snapshot.hasError) {
-                    return Text('Error al cargar las ubicaciones');
-                  }
-                  final locations = snapshot.data!;
-                  return ListView.builder(
-                    shrinkWrap: true,
-                    physics: NeverScrollableScrollPhysics(),
-                    itemCount: locations.length,
-                    itemBuilder: (context, index) {
-                      final location = locations[index];
-                      final name = location['name'] ?? 'Sin nombre';
-                      final category = location['category'] ?? 'Sin categoría';
-                      final subcategory = location['subcategory'] ?? 'Sin subcategoría';
-                      final imageUrl = location['imageUrl'] ?? '';
-                      final coordinates = location['coordinates'] as GeoPoint;
-
-                      return Card(
-                        margin: EdgeInsets.symmetric(vertical: 10),
-                        child: ListTile(
-                          title: Text(name),
-                          subtitle: Text('$category - $subcategory'),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.image),
-                                onPressed: () => _showImageDialog(imageUrl),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.map),
-                                onPressed: () => _navigateToLocation(
-                                  LatLng(coordinates.latitude, coordinates.longitude),
-                                  category,
-                                  subcategory,
-                                ),
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete),
-                                onPressed: () => _showDeleteConfirmationDialog(location),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  GestureDetector(
+                    onTap: () => _navigateToEditableLocations(context),
+                    child: Column(
+                      children: [
+                        Text('Ubicaciones', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Icon(Icons.location_on, size: 30),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _navigateToEditableEvents(context),
+                    child: Column(
+                      children: [
+                        Text('Eventos', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Icon(Icons.event, size: 30),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -397,6 +314,8 @@ class _MostrarDatosState extends State<MostrarDatos> {
     );
   }
 }
+
+
 
 
 

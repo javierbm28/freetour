@@ -3,16 +3,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:freetour/pagines/DetalleEvento.dart';
 
-class ListaEventos extends StatelessWidget {
+class ListaEventosUsuario extends StatelessWidget {
+  final String userEmail;
+
+  ListaEventosUsuario({required this.userEmail});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Lista de Eventos'),
+        title: Text('Mis Eventos'),
         backgroundColor: Color.fromARGB(255, 63, 214, 63),
       ),
       body: StreamBuilder(
-        stream: FirebaseFirestore.instance.collection('events').snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('events')
+            .where('createdByEmail', isEqualTo: userEmail)
+            .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
@@ -65,6 +72,8 @@ class ListaEventos extends StatelessWidget {
     );
   }
 }
+
+
 
 
 
