@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'VerPerfil.dart';
 
 class EditableFollowersList extends StatelessWidget {
@@ -77,13 +78,15 @@ class EditableFollowersList extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 30,
                     backgroundImage: AssetImage('lib/images/PerfilUser.png'),
-                    child: FadeInImage.assetNetwork(
-                      placeholder: 'lib/images/PerfilUser.png',
-                      image: userProfileImage,
-                      fit: BoxFit.cover,
-                      imageErrorBuilder: (context, error, stackTrace) {
-                        return Image.asset('lib/images/PerfilUser.png', fit: BoxFit.cover);
-                      },
+                    child: ClipOval(
+                      child: CachedNetworkImage(
+                        imageUrl: userProfileImage,
+                        placeholder: (context, url) => CircularProgressIndicator(),
+                        errorWidget: (context, url, error) => Image.asset('lib/images/PerfilUser.png', fit: BoxFit.cover),
+                        fit: BoxFit.cover,
+                        width: 60,
+                        height: 60,
+                      ),
                     ),
                   ),
                 ),
@@ -110,3 +113,4 @@ class EditableFollowersList extends StatelessWidget {
     );
   }
 }
+

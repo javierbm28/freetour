@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:freetour/pagines/verPerfil.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'VerPerfil.dart';
 
 class ListaParticipantes extends StatelessWidget {
   final String eventId;
@@ -29,7 +30,17 @@ class ListaParticipantes extends StatelessWidget {
               return ListTile(
                 leading: participant['profileImage'] != null
                     ? CircleAvatar(
-                        backgroundImage: NetworkImage(participant['profileImage']),
+                        backgroundImage: AssetImage('lib/images/PerfilUser.png'),
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: participant['profileImage'],
+                            placeholder: (context, url) => CircularProgressIndicator(),
+                            errorWidget: (context, url, error) => Image.asset('lib/images/PerfilUser.png', fit: BoxFit.cover),
+                            fit: BoxFit.cover,
+                            width: 60,
+                            height: 60,
+                          ),
+                        ),
                       )
                     : Icon(Icons.person),
                 title: GestureDetector(

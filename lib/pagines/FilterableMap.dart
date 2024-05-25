@@ -152,20 +152,41 @@ class _FilterableMapState extends State<FilterableMap> {
     LatLng? symbolLocation = symbol.options.geometry;
     if (symbolLocation == null) return;
 
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('events')
-        .where('coordinates',
-            isEqualTo:
-                GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
-        .get();
-    if (querySnapshot.docs.isNotEmpty) {
-      DocumentSnapshot doc = querySnapshot.docs.first;
-      String eventId = doc.id;
-      String title = doc['title'];
-      DateTime dateTime = (doc['dateTime'] as Timestamp).toDate();
-      String imageUrl = doc['imageUrl'];
+    // Verificar si es un evento o una ubicación
+    if (symbol.options.iconImage == 'evento') {
+      // Obtener y mostrar la información del evento
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('events')
+          .where('coordinates',
+              isEqualTo:
+                  GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot doc = querySnapshot.docs.first;
+        String eventId = doc.id;
+        String title = doc['title'];
+        DateTime dateTime = (doc['dateTime'] as Timestamp).toDate();
+        String imageUrl = doc['imageUrl'];
 
-      _showEventInfo(eventId, title, dateTime, imageUrl);
+        _showEventInfo(eventId, title, dateTime, imageUrl);
+      }
+    } else if (symbol.options.iconImage == 'puntero') {
+      // Obtener y mostrar la información de la ubicación
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('locations')
+          .where('coordinates',
+              isEqualTo:
+                  GeoPoint(symbolLocation.latitude, symbolLocation.longitude))
+          .get();
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentSnapshot doc = querySnapshot.docs.first;
+        String title = doc['name'];
+        String category = doc['category'];
+        String subcategory = doc['subcategory'];
+        String imageUrl = doc['imageUrl'];
+
+        _showLocationInfo(title, category, subcategory, imageUrl);
+      }
     }
   }
 
@@ -174,45 +195,133 @@ class _FilterableMapState extends State<FilterableMap> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(DateFormat.yMd().add_jm().format(dateTime)),
-              SizedBox(height: 10),
-              if (imageUrl.isNotEmpty)
-                Image.network(
-                  imageUrl,
-                  width: 200,
-                  height: 150,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.error);
-                  },
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9, // Ajuste del ancho
+            height:
+                MediaQuery.of(context).size.height * 0.7, // Ajuste de la altura
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Centrar contenido verticalmente
+              crossAxisAlignment: CrossAxisAlignment
+                  .center, // Centrar contenido horizontalmente
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(title,
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center),
                 ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text('Ver evento'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => DetalleEvento(eventId: eventId),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text('Fecha: ${DateFormat.yMd().format(dateTime)}'),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text('Hora: ${DateFormat.jm().format(dateTime)}'),
+                ),
+                SizedBox(height: 10),
+                if (imageUrl.isNotEmpty)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.error);
+                        },
+                      ),
+                    ),
                   ),
-                );
-              },
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      child: Text('Ver evento'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DetalleEvento(eventId: eventId),
+                          ),
+                        );
+                      },
+                    ),
+                    TextButton(
+                      child: Text('Cerrar'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
-            TextButton(
-              child: Text('Cerrar'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showLocationInfo(
+      String title, String category, String subcategory, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9, // Ajuste del ancho
+            height:
+                MediaQuery.of(context).size.height * 0.7, // Ajuste de la altura
+            child: Column(
+              mainAxisAlignment:
+                  MainAxisAlignment.center, // Centrar contenido verticalmente
+              crossAxisAlignment: CrossAxisAlignment
+                  .center, // Centrar contenido horizontalmente
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(title,
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text('$category - $subcategory'),
+                ),
+                SizedBox(height: 10),
+                if (imageUrl.isNotEmpty)
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.error);
+                        },
+                      ),
+                    ),
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      child: Text('Cerrar'),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );
@@ -234,7 +343,7 @@ class _FilterableMapState extends State<FilterableMap> {
         mapController?.addSymbol(SymbolOptions(
           geometry: latLng,
           iconImage: 'evento',
-          iconSize: 0.1,
+          iconSize: 0.08, // Tamaño del ícono igual al de las ubicaciones
         ));
       });
     } else {
@@ -280,7 +389,7 @@ class _FilterableMapState extends State<FilterableMap> {
           mapController!.addSymbol(SymbolOptions(
             geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
             iconImage: 'evento', // Asegúrate de cargar un ícono de evento
-            iconSize: 0.1,
+            iconSize: 0.08, // Tamaño del ícono igual al de las ubicaciones
           ));
         }
       });
@@ -426,5 +535,3 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
-
-
