@@ -74,8 +74,8 @@ flutter:
     - lib/images/Puntero.png
     - lib/images/PerfilUser.png
     - lib/images/evento.png
+    - lib/images/Discovery.jpg
     - assets/foto_fondo.jpg
-    - lib/images/video_fondo.mp4
     - assets/assets/symbols/custom-icon.png
 
 

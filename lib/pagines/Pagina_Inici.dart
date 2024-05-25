@@ -5,7 +5,6 @@ import 'package:freetour/components/boto_auth.dart';
 import 'package:freetour/pagines/MostrarDatos.dart'; // Asegúrate de que esta es la clase correcta
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
-import 'package:video_player/video_player.dart';
 import 'verPerfil.dart';
 
 class PaginaInici extends StatefulWidget {
@@ -17,24 +16,6 @@ class PaginaInici extends StatefulWidget {
 
 class _PaginaIniciState extends State<PaginaInici> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  late VideoPlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = VideoPlayerController.asset("lib/images/video_fondo.mp4")
-      ..initialize().then((_) {
-        setState(() {});
-        _controller.play();
-        _controller.setLooping(true);
-      });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   void logout() async {
     await _auth.signOut();
@@ -88,57 +69,33 @@ class _PaginaIniciState extends State<PaginaInici> {
             ? Center(child: Text('No hay usuario autenticado'))
             : Stack(
                 children: [
-                  if (_controller.value.isInitialized)
-                    Positioned.fill(
-                      child: FittedBox(
-                        fit: BoxFit.cover,
-                        child: SizedBox(
-                          width: _controller.value.size.width,
-                          height: _controller.value.size.height,
-                          child: VideoPlayer(_controller),
-                        ),
-                      ),
+                  Positioned.fill(
+                    child: Image.asset(
+                      "lib/images/Discovery.jpg",
+                      fit: BoxFit.cover,
                     ),
-                  SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.all(100.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          FutureBuilder<DocumentSnapshot>(
-                            future: FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user.uid)
-                                .get(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return CircularProgressIndicator();
-                              }
-                              if (snapshot.hasError) {
-                                return Text('Error al obtener los datos');
-                              }
-                              final data = snapshot.data!.data() as Map<String, dynamic>;
-                              final String nombre = data['nombre'] ?? '';
-                              final String apellidos = data['apellidos'] ?? '';
-                              return Center(
-                                child: Text(
-                                  "$nombre $apellidos",
-                                  style: const TextStyle(
-                                    fontSize: 50,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color.fromARGB(255, 45, 255, 3),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 30),
-                          const Text(
-                            "Bienvenido/a",
-                            style: TextStyle(
-                              fontSize: 50,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 45, 255, 3),
+                  ),
+                  Positioned(
+                    bottom: 50,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => FilterableMap()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+                            backgroundColor: Color.fromARGB(255, 63, 214, 63),
+                            foregroundColor: Colors.black,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: Colors.black, width: 2),
                             ),
                           ),
                           const SizedBox(height: 245),
