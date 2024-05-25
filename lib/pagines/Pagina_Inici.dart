@@ -52,7 +52,21 @@ class _PaginaIniciState extends State<PaginaInici> {
       onWillPop: () async => false,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Discovery"),
+          title: FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance.collection('users').doc(user?.uid).get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Text('');
+              }
+              if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+                return Text('');
+              }
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final String nombre = data['nombre'] ?? '';
+              final String apellidos = data['apellidos'] ?? '';
+              return Text('$nombre $apellidos');
+            },
+          ),
           backgroundColor: const Color.fromARGB(255, 63, 214, 63),
           actions: [
             IconButton(
@@ -97,18 +111,14 @@ class _PaginaIniciState extends State<PaginaInici> {
                               borderRadius: BorderRadius.circular(10),
                               side: BorderSide(color: Colors.black, width: 2),
                             ),
+                            elevation: 5,
+                            shadowColor: Colors.grey,
                           ),
-                          const SizedBox(height: 245),
-                          BotoAuth(
-                            text: "Ir a mapa",
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => FilterableMap()),
-                              );
-                            },
+                          child: Text(
+                            "Ir a mapa",
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -118,3 +128,4 @@ class _PaginaIniciState extends State<PaginaInici> {
     );
   }
 }
+
