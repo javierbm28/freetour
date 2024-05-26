@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freetour/components/boto_auth.dart';
-import 'package:freetour/pagines/MostrarDatos.dart'; // Asegúrate de que esta es la clase correcta
+import 'package:freetour/pagines/MostrarDatos.dart';
 import 'package:freetour/pagines/Pagina_Login.dart';
 import 'package:freetour/pagines/FilterableMap.dart';
 import 'verPerfil.dart';
@@ -128,4 +128,5 @@ class _PaginaIniciState extends State<PaginaInici> {
     );
   }
 }
+
 

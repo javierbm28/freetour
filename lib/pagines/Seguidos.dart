@@ -16,6 +16,15 @@ class Seguidos extends StatelessWidget {
     );
   }
 
+  Future<DocumentSnapshot> _getUserData() async {
+    try {
+      return await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    } catch (e) {
+      print('Error al obtener los datos del usuario: $e');
+      throw e; // O maneja el error de manera adecuada
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -23,18 +32,25 @@ class Seguidos extends StatelessWidget {
         title: Text('Seguidos'),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: Colors.grey[300], // Fondo gris no muy oscuro
+      backgroundColor: Colors.grey[300],
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+        future: _getUserData(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error al cargar los datos: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('No se encontraron datos para este usuario.'));
+          }
+
           final user = snapshot.data!.data() as Map<String, dynamic>;
           final seguidos = user['seguidos'] as List<dynamic>;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10), // Padding horizontal de 10
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: ListView.builder(
               itemCount: seguidos.length,
               itemBuilder: (context, index) {
@@ -42,9 +58,19 @@ class Seguidos extends StatelessWidget {
                 return FutureBuilder<DocumentSnapshot>(
                   future: FirebaseFirestore.instance.collection('users').doc(seguidoId).get(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       return ListTile(
                         title: Text('Cargando...'),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return ListTile(
+                        title: Text('Error al cargar los datos: ${snapshot.error}'),
+                      );
+                    }
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return ListTile(
+                        title: Text('No se encontraron datos para este seguido.'),
                       );
                     }
                     final seguido = snapshot.data!.data() as Map<String, dynamic>;
@@ -53,7 +79,7 @@ class Seguidos extends StatelessWidget {
                       leading: GestureDetector(
                         onTap: () => _navigateToProfile(context, seguidoId, seguido['email']),
                         child: CircleAvatar(
-                          radius: 40, // Tamaño de imagen más grande
+                          radius: 40,
                           backgroundImage: AssetImage('lib/images/PerfilUser.png'),
                           child: ClipOval(
                             child: CachedNetworkImage(
@@ -71,7 +97,7 @@ class Seguidos extends StatelessWidget {
                         onTap: () => _navigateToProfile(context, seguidoId, seguido['email']),
                         child: Text(
                           seguido['apodo'],
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Apodo más grande
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                       ),
                     );

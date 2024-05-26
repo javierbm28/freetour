@@ -8,18 +8,36 @@ class ListaParticipantes extends StatelessWidget {
 
   ListaParticipantes({required this.eventId});
 
+  Future<DocumentSnapshot> _getEventData() async {
+    try {
+      return await FirebaseFirestore.instance.collection('events').doc(eventId).get();
+    } catch (e) {
+      print('Error al obtener los datos del evento: $e');
+      throw e;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Participantes'),
+        backgroundColor: Color.fromARGB(255, 63, 214, 63),
       ),
+      backgroundColor: Colors.grey[300], // Fondo gris claro
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('events').doc(eventId).get(),
+        future: _getEventData(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error al cargar los datos: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('No se encontraron datos para este evento.'));
+          }
+
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final participants = data['participants'] as List<dynamic>;
 
@@ -65,3 +83,4 @@ class ListaParticipantes extends StatelessWidget {
     );
   }
 }
+

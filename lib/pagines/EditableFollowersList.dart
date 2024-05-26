@@ -66,7 +66,7 @@ class EditableFollowersList extends StatelessWidget {
             itemCount: users.length,
             itemBuilder: (context, index) {
               final user = users[index];
-              final userId = user['userId'];
+              final followerUserId = user['userId'];
               final userEmail = user['userEmail'];
               final userApodo = user['userApodo'];
               final userProfileImage = user['userProfileImage'];
@@ -74,7 +74,7 @@ class EditableFollowersList extends StatelessWidget {
               return ListTile(
                 contentPadding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 leading: GestureDetector(
-                  onTap: () => _navigateToProfile(context, userId, userEmail),
+                  onTap: () => _navigateToProfile(context, followerUserId, userEmail),
                   child: CircleAvatar(
                     radius: 30,
                     backgroundImage: AssetImage('lib/images/PerfilUser.png'),
@@ -91,7 +91,7 @@ class EditableFollowersList extends StatelessWidget {
                   ),
                 ),
                 title: GestureDetector(
-                  onTap: () => _navigateToProfile(context, userId, userEmail),
+                  onTap: () => _navigateToProfile(context, followerUserId, userEmail),
                   child: Text(
                     userApodo,
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -100,8 +100,7 @@ class EditableFollowersList extends StatelessWidget {
                 trailing: IconButton(
                   icon: Icon(Icons.remove_circle),
                   onPressed: () async {
-                    await _removeFollower(userId);
-                    // Update the list after removal
+                    await _removeFollower(followerUserId);
                     (context as Element).markNeedsBuild();
                   },
                 ),
@@ -113,4 +112,5 @@ class EditableFollowersList extends StatelessWidget {
     );
   }
 }
+
 

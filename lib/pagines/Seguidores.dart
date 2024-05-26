@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'VerPerfil.dart';
 
 class Seguidores extends StatelessWidget {
@@ -16,25 +17,55 @@ class Seguidores extends StatelessWidget {
     );
   }
 
+  Future<DocumentSnapshot> _getUserData() async {
+    try {
+      return await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    } catch (e) {
+      print('Error al obtener los datos del usuario: $e');
+      throw e; // O maneja el error de manera adecuada
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Seguidores'),
+          backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        ),
+        body: Center(
+          child: Text('Por favor, inicie sesión para ver los seguidores.'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Seguidores'),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      backgroundColor: Colors.grey[300], // Fondo gris no muy oscuro
+      backgroundColor: Colors.grey[300],
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('users').doc(userId).get(),
+        future: _getUserData(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error al cargar los datos: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return Center(child: Text('No se encontraron datos para este usuario.'));
+          }
+
           final user = snapshot.data!.data() as Map<String, dynamic>;
           final seguidores = user['seguidores'] as List<dynamic>;
 
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10), // Padding horizontal de 10
+            padding: const EdgeInsets.symmetric(horizontal: 10),
             child: ListView.builder(
               itemCount: seguidores.length,
               itemBuilder: (context, index) {
@@ -42,9 +73,19 @@ class Seguidores extends StatelessWidget {
                 return FutureBuilder<DocumentSnapshot>(
                   future: FirebaseFirestore.instance.collection('users').doc(seguidorId).get(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       return ListTile(
                         title: Text('Cargando...'),
+                      );
+                    }
+                    if (snapshot.hasError) {
+                      return ListTile(
+                        title: Text('Error al cargar los datos: ${snapshot.error}'),
+                      );
+                    }
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return ListTile(
+                        title: Text('No se encontraron datos para este seguidor.'),
                       );
                     }
                     final seguidor = snapshot.data!.data() as Map<String, dynamic>;
@@ -53,7 +94,7 @@ class Seguidores extends StatelessWidget {
                       leading: GestureDetector(
                         onTap: () => _navigateToProfile(context, seguidorId, seguidor['email']),
                         child: CircleAvatar(
-                          radius: 40, // Tamaño de imagen más grande
+                          radius: 40,
                           backgroundImage: AssetImage('lib/images/PerfilUser.png'),
                           child: ClipOval(
                             child: CachedNetworkImage(
@@ -71,7 +112,7 @@ class Seguidores extends StatelessWidget {
                         onTap: () => _navigateToProfile(context, seguidorId, seguidor['email']),
                         child: Text(
                           seguidor['apodo'],
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), // Apodo más grande
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                       ),
                     );
@@ -85,6 +126,7 @@ class Seguidores extends StatelessWidget {
     );
   }
 }
+
 
 
 

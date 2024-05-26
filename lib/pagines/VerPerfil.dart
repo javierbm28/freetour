@@ -34,90 +34,120 @@ class _VerPerfilState extends State<VerPerfil> {
   }
 
   Future<void> _fetchData() async {
-    await _getUserData();
-    await _checkIfFollowing();
-    await _getFollowersCount();
-    await _getFollowingCount();
-    await _getEventsCount();
-    setState(() {}); // Refresh the UI with updated data
+    try {
+      await _getUserData();
+      await _checkIfFollowing();
+      await _getFollowersCount();
+      await _getFollowingCount();
+      await _getEventsCount();
+      setState(() {});
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
   }
 
   Future<DocumentSnapshot?> _getUserData() async {
-    if (widget.userId != null) {
-      return FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
-    } else {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: widget.userEmail)
-          .limit(1)
-          .get();
-      if (querySnapshot.docs.isNotEmpty) {
-        return querySnapshot.docs.first;
+    try {
+      if (widget.userId != null) {
+        return FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+      } else {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('email', isEqualTo: widget.userEmail)
+            .limit(1)
+            .get();
+        if (querySnapshot.docs.isNotEmpty) {
+          return querySnapshot.docs.first;
+        }
+        return null;
       }
+    } catch (e) {
+      print('Error getting user data: $e');
       return null;
     }
   }
 
   Future<List<DocumentSnapshot>> _getUserLocations() async {
-    final snapshot = await FirebaseFirestore.instance
-        .collection('locations')
-        .where('userEmail', isEqualTo: widget.userEmail)
-        .get();
-    return snapshot.docs;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('locations')
+          .where('userEmail', isEqualTo: widget.userEmail)
+          .get();
+      return snapshot.docs;
+    } catch (e) {
+      print('Error getting user locations: $e');
+      return [];
+    }
   }
 
   Future<void> _checkIfFollowing() async {
     if (currentUserId != null && widget.userId != null) {
-      final followDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUserId)
-          .collection('following')
-          .doc(widget.userId)
-          .get();
+      try {
+        final followDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUserId)
+            .collection('following')
+            .doc(widget.userId)
+            .get();
 
-      setState(() {
-        isFollowing = followDoc.exists;
-      });
+        setState(() {
+          isFollowing = followDoc.exists;
+        });
+      } catch (e) {
+        print('Error checking if following: $e');
+      }
     }
   }
 
   Future<void> _getFollowersCount() async {
     if (widget.userId != null) {
-      final followersSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .collection('followers')
-          .get();
+      try {
+        final followersSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.userId)
+            .collection('followers')
+            .get();
 
-      setState(() {
-        followersCount = followersSnapshot.docs.length;
-      });
+        setState(() {
+          followersCount = followersSnapshot.docs.length;
+        });
+      } catch (e) {
+        print('Error getting followers count: $e');
+      }
     }
   }
 
   Future<void> _getFollowingCount() async {
     if (widget.userId != null) {
-      final followingSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .collection('following')
-          .get();
+      try {
+        final followingSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.userId)
+            .collection('following')
+            .get();
 
-      setState(() {
-        followingCount = followingSnapshot.docs.length;
-      });
+        setState(() {
+          followingCount = followingSnapshot.docs.length;
+        });
+      } catch (e) {
+        print('Error getting following count: $e');
+      }
     }
   }
 
   Future<void> _getEventsCount() async {
-    final eventsSnapshot = await FirebaseFirestore.instance
-        .collection('events')
-        .where('createdByEmail', isEqualTo: widget.userEmail)
-        .get();
+    try {
+      final eventsSnapshot = await FirebaseFirestore.instance
+          .collection('events')
+          .where('createdByEmail', isEqualTo: widget.userEmail)
+          .get();
 
-    setState(() {
-      eventsCount = eventsSnapshot.docs.length;
-    });
+      setState(() {
+        eventsCount = eventsSnapshot.docs.length;
+      });
+    } catch (e) {
+      print('Error getting events count: $e');
+    }
   }
 
   void _navigateToLocation(BuildContext context, LatLng coordinates, String category, String subcategory) {
@@ -194,42 +224,46 @@ class _VerPerfilState extends State<VerPerfil> {
 
   Future<void> _followUser() async {
     if (currentUserId != null && currentUserId != widget.userId) {
-      final currentUserDocRef = FirebaseFirestore.instance.collection('users').doc(currentUserId);
-      final followedUserDocRef = FirebaseFirestore.instance.collection('users').doc(widget.userId);
+      try {
+        final currentUserDocRef = FirebaseFirestore.instance.collection('users').doc(currentUserId);
+        final followedUserDocRef = FirebaseFirestore.instance.collection('users').doc(widget.userId);
 
-      final isFollowing = (await currentUserDocRef.collection('following').doc(widget.userId).get()).exists;
+        final isFollowing = (await currentUserDocRef.collection('following').doc(widget.userId).get()).exists;
 
-      if (isFollowing) {
-        await currentUserDocRef.collection('following').doc(widget.userId).delete();
-        await followedUserDocRef.collection('followers').doc(currentUserId).delete();
-      } else {
-        final followedUserData = await followedUserDocRef.get();
-        if (followedUserData.exists) {
-          await currentUserDocRef.collection('following').doc(widget.userId).set({
-            'userId': widget.userId,
-            'userEmail': widget.userEmail,
-            'userApodo': followedUserData['apodo'],
-            'userProfileImage': followedUserData['fotoPerfil'],
-          });
-
-          final currentUserData = await currentUserDocRef.get();
-          if (currentUserData.exists) {
-            await followedUserDocRef.collection('followers').doc(currentUserId).set({
-              'userId': currentUserId,
-              'userEmail': currentUserData['email'],
-              'userApodo': currentUserData['apodo'],
-              'userProfileImage': currentUserData['fotoPerfil'],
+        if (isFollowing) {
+          await currentUserDocRef.collection('following').doc(widget.userId).delete();
+          await followedUserDocRef.collection('followers').doc(currentUserId).delete();
+        } else {
+          final followedUserData = await followedUserDocRef.get();
+          if (followedUserData.exists) {
+            await currentUserDocRef.collection('following').doc(widget.userId).set({
+              'userId': widget.userId,
+              'userEmail': widget.userEmail,
+              'userApodo': followedUserData['apodo'],
+              'userProfileImage': followedUserData['fotoPerfil'],
             });
+
+            final currentUserData = await currentUserDocRef.get();
+            if (currentUserData.exists) {
+              await followedUserDocRef.collection('followers').doc(currentUserId).set({
+                'userId': currentUserId,
+                'userEmail': currentUserData['email'],
+                'userApodo': currentUserData['apodo'],
+                'userProfileImage': currentUserData['fotoPerfil'],
+              });
+            }
           }
         }
+
+        setState(() {
+          this.isFollowing = !isFollowing;
+        });
+
+        _getFollowersCount();
+        _getFollowingCount();
+      } catch (e) {
+        print('Error following user: $e');
       }
-
-      setState(() {
-        this.isFollowing = !isFollowing;
-      });
-
-      _getFollowersCount();
-      _getFollowingCount();
     }
   }
 
@@ -264,6 +298,18 @@ class _VerPerfilState extends State<VerPerfil> {
 
   @override
   Widget build(BuildContext context) {
+    if (currentUserId == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Perfil del Usuario"),
+          backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        ),
+        body: Center(
+          child: Text('Por favor, inicie sesión para ver el perfil.'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Perfil del Usuario"),
@@ -283,7 +329,7 @@ class _VerPerfilState extends State<VerPerfil> {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error al cargar los datos del usuario'));
+            return Center(child: Text('Error al cargar los datos del usuario: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
             return Center(child: Text('Usuario no encontrado'));
@@ -332,7 +378,7 @@ class _VerPerfilState extends State<VerPerfil> {
                         return CircularProgressIndicator();
                       }
                       if (snapshot.hasError) {
-                        return Text('Error al cargar las ubicaciones');
+                        return Text('Error al cargar las ubicaciones: ${snapshot.error}');
                       }
                       final locations = snapshot.data!;
                       final reviewsCount = locations.length;
@@ -343,7 +389,7 @@ class _VerPerfilState extends State<VerPerfil> {
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
                               GestureDetector(
-                                onTap: () => _navigateToLocationsList(context), // Corregido
+                                onTap: () => _navigateToLocationsList(context),
                                 child: Column(
                                   children: [
                                     Text('$reviewsCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -352,7 +398,7 @@ class _VerPerfilState extends State<VerPerfil> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => _navigateToUserEvents(context), // Agregado
+                                onTap: () => _navigateToUserEvents(context),
                                 child: Column(
                                   children: [
                                     Text('$eventsCount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -380,7 +426,7 @@ class _VerPerfilState extends State<VerPerfil> {
                               ),
                             ],
                           ),
-                          if (currentUserId != widget.userId) // Prevent follow button for own profile
+                          if (currentUserId != widget.userId)
                             SizedBox(height: 20),
                           if (currentUserId != widget.userId)
                             ElevatedButton(
@@ -413,12 +459,17 @@ class FollowersOrFollowingList extends StatelessWidget {
 
   Future<List<DocumentSnapshot>> _getFollowersOrFollowing() async {
     final collection = isFollowers ? 'followers' : 'following';
-    final snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .collection(collection)
-        .get();
-    return snapshot.docs;
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection(collection)
+          .get();
+      return snapshot.docs;
+    } catch (e) {
+      print('Error getting followers or following: $e');
+      return [];
+    }
   }
 
   void _navigateToProfile(BuildContext context, String userId, String userEmail) {
@@ -443,7 +494,7 @@ class FollowersOrFollowingList extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error al cargar la lista'));
+            return Center(child: Text('Error al cargar la lista: ${snapshot.error}'));
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('No hay datos disponibles'));
@@ -478,6 +529,7 @@ class FollowersOrFollowingList extends StatelessWidget {
     );
   }
 }
+
 
 
 

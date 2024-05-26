@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freetour/pagines/DetalleEvento.dart';
+import 'package:freetour/pagines/Pagina_Login.dart';
 
 class ListaEventos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Lista de Eventos'),
+          backgroundColor: Color.fromARGB(255, 63, 214, 63),
+        ),
+        body: Center(
+          child: Text('Por favor, inicie sesión para ver los eventos.'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Lista de Eventos'),
@@ -65,6 +81,7 @@ class ListaEventos extends StatelessWidget {
     );
   }
 }
+
 
 
 

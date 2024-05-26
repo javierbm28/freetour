@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:freetour/pagines/CrearNuevaUbicacion.dart';
 import 'package:freetour/pagines/Filtros.dart';
 import 'package:freetour/pagines/CategoriasFiltros.dart';
 import 'package:freetour/pagines/UbicacionesGuardadas.dart';
-import 'package:freetour/pagines/Pagina_Inici.dart';
 import 'package:freetour/pagines/CrearNuevoEvento.dart';
 import 'package:freetour/pagines/ListaEventos.dart';
-import 'package:freetour/pagines/DetalleEvento.dart'; // Importar DetalleEvento
+import 'package:freetour/pagines/DetalleEvento.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -32,11 +32,15 @@ class _FilterableMapState extends State<FilterableMap> {
   Symbol? lastAddedSymbol;
   LatLng? lastTapLatLng;
   List<Category> activeFilters = categories;
-  bool showEvents = false; // Iniciar con eventos ocultos
+  bool showEvents = true;
+  bool showLocations = true;
   bool isMapLoaded = false;
+  bool dialogOpen = false;
+  final User? currentUser = FirebaseAuth.instance.currentUser;
 
   TextEditingController nameController = TextEditingController();
   String? selectedType;
+  DateTime? lastButtonTap;
 
   @override
   void initState() {
@@ -59,6 +63,7 @@ class _FilterableMapState extends State<FilterableMap> {
     setState(() {
       isMapLoaded = true;
     });
+    _updateMap();
   }
 
   Future<void> _loadImageFromAssets() async {
@@ -71,7 +76,7 @@ class _FilterableMapState extends State<FilterableMap> {
     _requestLocationPermission();
     if (widget.initialPosition != null) {
       mapController?.animateCamera(CameraUpdate.newLatLngZoom(
-          widget.initialPosition!, widget.zoomLevel)); // Usar zoomLevel
+          widget.initialPosition!, widget.zoomLevel));
       _updateMap();
     }
   }
@@ -102,7 +107,9 @@ class _FilterableMapState extends State<FilterableMap> {
     if (lastTap != null &&
         now.difference(lastTap!) < Duration(milliseconds: 500)) {
       lastTapLatLng = latLng;
-      _showCreationDialog(context, latLng);
+      if (!dialogOpen) {
+        _showCreationDialog(context, latLng);
+      }
       lastTap = null;
     } else {
       lastTap = now;
@@ -110,6 +117,7 @@ class _FilterableMapState extends State<FilterableMap> {
   }
 
   void _showCreationDialog(BuildContext context, LatLng latLng) {
+    dialogOpen = true;
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -122,6 +130,7 @@ class _FilterableMapState extends State<FilterableMap> {
                 title: Text('Agregar una ubicación'),
                 onTap: () {
                   Navigator.of(context).pop();
+                  dialogOpen = false;
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CrearNuevaUbicacion(
                       latLng: latLng,
@@ -134,6 +143,7 @@ class _FilterableMapState extends State<FilterableMap> {
                 title: Text('Agregar un evento'),
                 onTap: () {
                   Navigator.of(context).pop();
+                  dialogOpen = false;
                   Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => CrearNuevoEvento(
                       latLng: latLng,
@@ -145,10 +155,14 @@ class _FilterableMapState extends State<FilterableMap> {
           ),
         );
       },
-    );
+    ).then((_) {
+      dialogOpen = false;
+    });
   }
 
   void _onSymbolTapped(Symbol symbol) async {
+    if (currentUser == null) return;
+
     LatLng? symbolLocation = symbol.options.geometry;
     if (symbolLocation == null) return;
 
@@ -197,20 +211,17 @@ class _FilterableMapState extends State<FilterableMap> {
       builder: (BuildContext context) {
         return Dialog(
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.9, // Ajuste del ancho
-            height:
-                MediaQuery.of(context).size.height * 0.7, // Ajuste de la altura
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
             child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center, // Centrar contenido verticalmente
-              crossAxisAlignment: CrossAxisAlignment
-                  .center, // Centrar contenido horizontalmente
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(title,
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center),
                 ),
                 Padding(
@@ -274,20 +285,17 @@ class _FilterableMapState extends State<FilterableMap> {
       builder: (BuildContext context) {
         return Dialog(
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.9, // Ajuste del ancho
-            height:
-                MediaQuery.of(context).size.height * 0.7, // Ajuste de la altura
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
             child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center, // Centrar contenido verticalmente
-              crossAxisAlignment: CrossAxisAlignment
-                  .center, // Centrar contenido horizontalmente
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(title,
-                      style:
-                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center),
                 ),
                 Padding(
@@ -343,7 +351,7 @@ class _FilterableMapState extends State<FilterableMap> {
         mapController?.addSymbol(SymbolOptions(
           geometry: latLng,
           iconImage: 'evento',
-          iconSize: 0.08, // Tamaño del ícono igual al de las ubicaciones
+          iconSize: 0.08,
         ));
       });
     } else {
@@ -351,45 +359,50 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  void _updateMap() {
-    if (mapController == null) return;
+  Future<void> _updateMap() async {
+    if (mapController == null || !isMapLoaded) return;
 
-    mapController!.clearSymbols();
+    try {
+      await mapController!.clearSymbols();
+    } catch (e) {
+      print('Error clearing symbols: $e');
+      return; // Exit the method if clearing symbols failed
+    }
+
     // Cargar ubicaciones
-    for (var category in activeFilters) {
-      for (var subcategory in category.subcategories.entries) {
-        if (subcategory.value) {
-          FirebaseFirestore.instance
-              .collection('locations')
-              .where('category', isEqualTo: category.name)
-              .where('subcategory', isEqualTo: subcategory.key)
-              .get()
-              .then((querySnapshot) {
-            for (var doc in querySnapshot.docs) {
-              GeoPoint geoPoint = doc['coordinates'];
-              mapController!.addSymbol(SymbolOptions(
-                geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-                iconImage: 'puntero',
-                iconSize: 0.08,
-              ));
-            }
-          });
+    if (showLocations) {
+      for (var category in activeFilters) {
+        for (var subcategory in category.subcategories.entries) {
+          if (subcategory.value) {
+            FirebaseFirestore.instance
+                .collection('locations')
+                .where('category', isEqualTo: category.name)
+                .where('subcategory', isEqualTo: subcategory.key)
+                .get()
+                .then((querySnapshot) {
+              for (var doc in querySnapshot.docs) {
+                GeoPoint geoPoint = doc['coordinates'];
+                mapController!.addSymbol(SymbolOptions(
+                  geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+                  iconImage: 'puntero',
+                  iconSize: 0.08,
+                ));
+              }
+            });
+          }
         }
       }
     }
 
     // Cargar eventos
     if (showEvents) {
-      FirebaseFirestore.instance
-          .collection('events')
-          .get()
-          .then((querySnapshot) {
+      FirebaseFirestore.instance.collection('events').get().then((querySnapshot) {
         for (var doc in querySnapshot.docs) {
           GeoPoint geoPoint = doc['coordinates'];
           mapController!.addSymbol(SymbolOptions(
             geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-            iconImage: 'evento', // Asegúrate de cargar un ícono de evento
-            iconSize: 0.08, // Tamaño del ícono igual al de las ubicaciones
+            iconImage: 'evento',
+            iconSize: 0.08,
           ));
         }
       });
@@ -451,18 +464,102 @@ class _FilterableMapState extends State<FilterableMap> {
     _updateMap();
   }
 
-  void _toggleEventsVisibility() {
+  void _toggleVisibility() {
     setState(() {
       showEvents = !showEvents;
+      showLocations = !showLocations;
     });
     _updateMap();
   }
 
+  bool _isDoubleTapOnButton() {
+    final DateTime now = DateTime.now();
+    if (lastButtonTap != null &&
+        now.difference(lastButtonTap!) < Duration(milliseconds: 500)) {
+      lastButtonTap = now;
+      return true;
+    }
+    lastButtonTap = now;
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Discovery'),
+          backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+        ),
+        body: Center(
+          child: Text('Por favor, inicie sesión para acceder al mapa.'),
+        ),
+      );
+    }
+
     return WillPopScope(
-      onWillPop: () async => false, // Prevenir que se pueda volver hacia atrás
+      onWillPop: () async => true,
       child: Scaffold(
+        appBar: AppBar(
+          title: Text('Discovery'),
+          backgroundColor: const Color.fromARGB(255, 63, 214, 63),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.filter_alt),
+              onPressed: () {
+                if (_isDoubleTapOnButton()) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => Filtros(
+                      onApplyFilters: (selectedCategories) {
+                        _applyFilters(selectedCategories);
+                      },
+                    ),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.location_on),
+              onPressed: () {
+                if (_isDoubleTapOnButton()) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => UbicacionesGuardadas(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: Icon(
+                (showEvents && showLocations)
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+              ),
+              onPressed: () {
+                if (_isDoubleTapOnButton()) return;
+                _toggleVisibility();
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.event),
+              onPressed: () {
+                if (_isDoubleTapOnButton()) return;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ListaEventos(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         body: Column(
           children: <Widget>[
             Expanded(
@@ -472,62 +569,10 @@ class _FilterableMapState extends State<FilterableMap> {
                 onMapCreated: _onMapCreated,
                 initialCameraPosition: CameraPosition(
                     target: widget.initialPosition ?? defaultCenter,
-                    zoom: widget.zoomLevel), // Usar zoomLevel
+                    zoom: widget.zoomLevel),
                 onStyleLoadedCallback: _onStyleLoaded,
                 onMapClick: _onMapClicked,
               ),
-            ),
-          ],
-        ),
-        floatingActionButton: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => Filtros(
-                    onApplyFilters: (selectedCategories) {
-                      _applyFilters(selectedCategories);
-                    },
-                  ),
-                ),
-              ),
-              child: Icon(Icons.filter_list),
-            ),
-            SizedBox(height: 10),
-            FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      UbicacionesGuardadas(), // Navegar a la nueva página
-                ),
-              ),
-              child: Icon(Icons.list),
-            ),
-            SizedBox(height: 10),
-            FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      PaginaInici(), // Navegar a la página de inicio
-                ),
-              ),
-              child: Icon(Icons.home),
-            ),
-            SizedBox(height: 10),
-            FloatingActionButton(
-              onPressed: _toggleEventsVisibility,
-              child: Icon(showEvents ? Icons.visibility : Icons.visibility_off),
-            ),
-            SizedBox(height: 10),
-            FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ListaEventos(), // Navegar a la página de eventos
-                ),
-              ),
-              child: Icon(Icons.event),
             ),
           ],
         ),
@@ -535,3 +580,7 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
+
+
+

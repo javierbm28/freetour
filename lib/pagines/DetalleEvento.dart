@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:freetour/pagines/ListaParticipantes.dart';
-import 'package:freetour/pagines/FilterableMap.dart'; // Importa la página FilterableMap
-import 'package:mapbox_gl/mapbox_gl.dart'; // Importa la librería de Mapbox
-import 'package:flutter/services.dart' show rootBundle; // Importa la librería correcta
+import 'package:freetour/pagines/FilterableMap.dart';
+import 'package:mapbox_gl/mapbox_gl.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:freetour/pagines/VerPerfil.dart'; // Importa la página VerPerfil
+import 'package:freetour/pagines/VerPerfil.dart';
 
 class DetalleEvento extends StatefulWidget {
   final String eventId;
@@ -33,89 +33,112 @@ class _DetalleEventoState extends State<DetalleEvento> {
   }
 
   Future<void> _loadParticipants() async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection('events').doc(widget.eventId).get();
-    final data = doc.data() as Map<String, dynamic>?;
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('events').doc(widget.eventId).get();
+      final data = doc.data() as Map<String, dynamic>?;
 
-    if (data != null && data.containsKey('participants')) {
-      List<dynamic> participantsList = data['participants'];
-      List<Map<String, dynamic>> loadedParticipants = [];
+      if (data != null && data.containsKey('participants')) {
+        List<dynamic> participantsList = data['participants'];
+        List<Map<String, dynamic>> loadedParticipants = [];
 
-      for (var participant in participantsList) {
-        DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(participant['uid']).get();
-        final userData = userDoc.data() as Map<String, dynamic>;
-        loadedParticipants.add({
-          'uid': participant['uid'],
-          'name': userData['name'] ?? 'Nombre no disponible',
-          'profileImage': userData['profileImage'] ?? '',
-          'email': userData['email'] ?? 'Correo no disponible',
+        for (var participant in participantsList) {
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(participant['uid']).get();
+          final userData = userDoc.data() as Map<String, dynamic>;
+          loadedParticipants.add({
+            'uid': participant['uid'],
+            'name': userData['name'] ?? 'Nombre no disponible',
+            'profileImage': userData['profileImage'] ?? '',
+            'email': userData['email'] ?? 'Correo no disponible',
+          });
+        }
+
+        setState(() {
+          participantCount = loadedParticipants.length;
+          participants = loadedParticipants;
+          isParticipating = participantsList.any((p) => p['uid'] == currentUser?.uid);
+        });
+      } else {
+        setState(() {
+          participantCount = 0;
+          participants = [];
+          isParticipating = false;
         });
       }
-
-      setState(() {
-        participantCount = loadedParticipants.length;
-        participants = loadedParticipants;
-        isParticipating = participantsList.any((p) => p['uid'] == currentUser?.uid);
-      });
-    } else {
-      setState(() {
-        participantCount = 0;
-        participants = [];
-        isParticipating = false;
-      });
+    } catch (e) {
+      print('Error loading participants: $e');
     }
   }
 
   Future<void> _toggleParticipation() async {
     if (currentUser == null) return;
 
-    DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(widget.eventId);
-    DocumentSnapshot eventDoc = await eventRef.get();
-    final data = eventDoc.data() as Map<String, dynamic>?;
+    try {
+      DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(widget.eventId);
+      DocumentSnapshot eventDoc = await eventRef.get();
+      final data = eventDoc.data() as Map<String, dynamic>?;
 
-    if (data == null) return;
+      if (data == null) return;
 
-    List<dynamic> participantsList = data.containsKey('participants') ? data['participants'] : [];
+      List<dynamic> participantsList = data.containsKey('participants') ? data['participants'] : [];
 
-    if (isParticipating) {
-      participantsList.removeWhere((p) => p['uid'] == currentUser!.uid);
-    } else {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).get();
-      final userData = userDoc.data() as Map<String, dynamic>;
-      participantsList.add({
-        'uid': currentUser!.uid,
-        'name': userData['apodo'] ?? 'Nombre no disponible',
-        'profileImage': userData['fotoPerfil'] ?? '',
-        'email': currentUser!.email ?? 'Correo no disponible',
-      });
+      if (isParticipating) {
+        participantsList.removeWhere((p) => p['uid'] == currentUser!.uid);
+      } else {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUser!.uid).get();
+        final userData = userDoc.data() as Map<String, dynamic>;
+        participantsList.add({
+          'uid': currentUser!.uid,
+          'name': userData['apodo'] ?? 'Nombre no disponible',
+          'profileImage': userData['fotoPerfil'] ?? '',
+          'email': currentUser!.email ?? 'Correo no disponible',
+        });
+      }
+
+      await eventRef.update({'participants': participantsList});
+      _loadParticipants();
+    } catch (e) {
+      print('Error toggling participation: $e');
     }
-
-    await eventRef.update({'participants': participantsList});
-    _loadParticipants();
   }
 
   void _navigateToCreatorProfile(String userEmail) async {
-    // Fetch the creator's user document using their email
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: userEmail)
-        .limit(1)
-        .get();
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
 
-    if (querySnapshot.docs.isNotEmpty) {
-      final userDoc = querySnapshot.docs.first;
-      final userId = userDoc.id;
+      if (querySnapshot.docs.isNotEmpty) {
+        final userDoc = querySnapshot.docs.first;
+        final userId = userDoc.id;
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
-        ),
-      );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => VerPerfil(userId: userId, userEmail: userEmail),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error navigating to creator profile: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Detalle del Evento'),
+          backgroundColor: Color.fromARGB(255, 63, 214, 63),
+        ),
+        body: Center(
+          child: Text('Por favor, inicie sesión para ver el detalle del evento.'),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Detalle del Evento'),
@@ -126,6 +149,10 @@ class _DetalleEventoState extends State<DetalleEvento> {
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error al cargar los datos del evento: ${snapshot.error}'));
           }
 
           Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
@@ -187,7 +214,7 @@ class _DetalleEventoState extends State<DetalleEvento> {
                               MaterialPageRoute(
                                 builder: (context) => FilterableMap(
                                   initialPosition: LatLng(geoPoint.latitude, geoPoint.longitude),
-                                  zoomLevel: 16.0, // Ajusta el nivel de zoom según sea necesario
+                                  zoomLevel: 16.0,
                                 ),
                               ),
                             );
@@ -225,7 +252,6 @@ class _DetalleEventoState extends State<DetalleEvento> {
                       ),
                     ),
                     SizedBox(height: 16.0),
-                    // _buildParticipantsList(),
                   ],
                 ),
               ),
@@ -247,11 +273,11 @@ class _DetalleEventoState extends State<DetalleEvento> {
           maxLines: isDescriptionExpanded ? null : maxLines,
           overflow: isDescriptionExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
         ),
-        if (description.length > 100) // You can adjust the length threshold as needed
+        if (description.length > 100)
           TextButton(
             onPressed: () {
               setState(() {
-                isDescriptionExpanded = !isDescriptionExpanded;   
+                isDescriptionExpanded = !isDescriptionExpanded;
               });
             },
             child: Text(isDescriptionExpanded ? 'Leer menos' : 'Leer más'),
@@ -260,6 +286,7 @@ class _DetalleEventoState extends State<DetalleEvento> {
     );
   }
 }
+
 
 
 
