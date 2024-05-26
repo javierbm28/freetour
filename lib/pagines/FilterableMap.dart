@@ -10,6 +10,8 @@ import 'package:freetour/pagines/UbicacionesGuardadas.dart';
 import 'package:freetour/pagines/CrearNuevoEvento.dart';
 import 'package:freetour/pagines/ListaEventos.dart';
 import 'package:freetour/pagines/DetalleEvento.dart';
+import 'package:freetour/pagines/Pagina_Inici.dart'; // Importa tu página de inicio
+import 'package:freetour/pagines/verPerfil.dart'; // Importa tu página de perfil
 import 'dart:typed_data';
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:async';
@@ -504,9 +506,13 @@ class _FilterableMapState extends State<FilterableMap> {
           title: Text('Discovery'),
           backgroundColor: const Color.fromARGB(255, 63, 214, 63),
           leading: IconButton(
-            icon: Icon(Icons.arrow_back),
+            icon: Icon(Icons.home),
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => PaginaInici(), 
+                ),
+              );
             },
           ),
           actions: [
@@ -558,6 +564,21 @@ class _FilterableMapState extends State<FilterableMap> {
                 );
               },
             ),
+            IconButton(
+              icon: Icon(Icons.person),
+              onPressed: () {
+                if (currentUser != null) {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => VerPerfil(
+                        userId: currentUser!.uid,
+                        userEmail: currentUser!.email!,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
           ],
         ),
         body: Column(
@@ -580,6 +601,7 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
 
 
 
