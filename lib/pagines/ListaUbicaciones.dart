@@ -67,6 +67,8 @@ class ListaUbicaciones extends StatelessWidget {
                               builder: (context) => FilterableMap(
                                 initialPosition: LatLng(coordinates.latitude, coordinates.longitude),
                                 zoomLevel: 16.0,
+                                activeCategory: category,
+                                activeSubcategory: subcategory,
                               ),
                             ),
                           );
@@ -109,6 +111,7 @@ class ListaUbicaciones extends StatelessWidget {
     );
   }
 }
+
 
 
 

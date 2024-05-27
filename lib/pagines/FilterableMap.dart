@@ -22,8 +22,11 @@ import 'package:intl/intl.dart';
 class FilterableMap extends StatefulWidget {
   final LatLng? initialPosition;
   final double zoomLevel;
+  final String? activeCategory;
+  final String? activeSubcategory;
 
-  FilterableMap({this.initialPosition, this.zoomLevel = 14.0});
+  FilterableMap({this.initialPosition, this.zoomLevel = 14.0, this.activeCategory, this.activeSubcategory});
+  
   @override
   _FilterableMapState createState() => _FilterableMapState();
 }
@@ -46,6 +49,9 @@ class _FilterableMapState extends State<FilterableMap> {
     super.initState();
     _loadPointerImage();
     _loadEventsImage();
+    if (widget.activeCategory != null && widget.activeSubcategory != null) {
+      _applyFilterFromConstructor(widget.activeCategory!, widget.activeSubcategory!);
+    }
   }
 
   void _onMapCreated(MapboxMapController controller) {
@@ -326,6 +332,22 @@ class _FilterableMapState extends State<FilterableMap> {
     } else {
       print('MapController is not initialized');
     }
+  }
+
+  void _applyFilterFromConstructor(String category, String subcategory) {
+    setState(() {
+      for (var cat in activeFilters) {
+        if (cat.name == category) {
+          for (var sub in cat.subcategories.keys) {
+            cat.subcategories[sub] = sub == subcategory;
+          }
+        } else {
+          for (var sub in cat.subcategories.keys) {
+            cat.subcategories[sub] = false;
+          }
+        }
+      }
+    });
   }
 
   Future<void> _updateMap() async {
