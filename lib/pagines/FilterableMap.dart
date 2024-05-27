@@ -189,8 +189,8 @@ class _FilterableMapState extends State<FilterableMap> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(title,
-                      style: TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center),
                 ),
                 Padding(
@@ -263,8 +263,8 @@ class _FilterableMapState extends State<FilterableMap> {
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(title,
-                      style: TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       textAlign: TextAlign.center),
                 ),
                 Padding(
@@ -365,14 +365,21 @@ class _FilterableMapState extends State<FilterableMap> {
 
     // Cargar eventos
     if (showEvents) {
-      FirebaseFirestore.instance.collection('events').get().then((querySnapshot) {
+      DateTime now = DateTime.now();
+      FirebaseFirestore.instance
+          .collection('events')
+          .get()
+          .then((querySnapshot) {
         for (var doc in querySnapshot.docs) {
-          GeoPoint geoPoint = doc['coordinates'];
-          mapController!.addSymbol(SymbolOptions(
-            geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-            iconImage: 'evento',
-            iconSize: 0.08,
-          ));
+          DateTime eventDateTime = (doc['dateTime'] as Timestamp).toDate();
+          if (eventDateTime.isAfter(now)) {
+            GeoPoint geoPoint = doc['coordinates'];
+            mapController!.addSymbol(SymbolOptions(
+              geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+              iconImage: 'evento',
+              iconSize: 0.08,
+            ));
+          }
         }
       });
     }
@@ -619,15 +626,3 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
