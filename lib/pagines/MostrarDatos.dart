@@ -6,7 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:typed_data'; // Importa este paquete para Uint8List
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:mapbox_gl/mapbox_gl.dart';
 import 'FilterableMap.dart'; // Importa la página del mapa
 import 'CategoriasFiltros.dart' as cat; // Importa categorías y filtros
 import 'EditableFollowersList.dart';
@@ -141,6 +140,18 @@ class _MostrarDatosState extends State<MostrarDatos> {
       });
     }
 
+    // Update userApodo in events
+    final userEvents = await FirebaseFirestore.instance
+        .collection('events')
+        .where('createdByEmail', isEqualTo: user.email)
+        .get();
+
+    for (var event in userEvents.docs) {
+      await event.reference.update({
+        'createdBy': newApodo,
+      });
+    }
+
     Navigator.pop(context, true); // Pasa un valor true para indicar que se realizaron cambios
   }
 
@@ -175,7 +186,10 @@ class _MostrarDatosState extends State<MostrarDatos> {
   void _navigateToEditableLocations(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => EditableLocationsList(userEmail: user.email!),
+        builder: (context) => EditableLocationsList(
+          userEmail: user.email!,
+          onLocationDeleted: _onLocationDeleted,
+        ),
       ),
     );
   }
@@ -183,9 +197,24 @@ class _MostrarDatosState extends State<MostrarDatos> {
   void _navigateToEditableEvents(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => EditableEventsList(userEmail: user.email!),
+        builder: (context) => EditableEventsList(
+          userEmail: user.email!,
+          onEventDeleted: _onEventDeleted,
+        ),
       ),
     );
+  }
+
+  void _onLocationDeleted() async {
+    await _updateMap();
+  }
+
+  void _onEventDeleted() async {
+    await _updateMap();
+  }
+
+  Future<void> _updateMap() async {
+    // Lógica para actualizar el mapa
   }
 
   void _showProfileImageDialog(String imageUrl) {
@@ -324,6 +353,8 @@ class _MostrarDatosState extends State<MostrarDatos> {
     );
   }
 }
+
+
 
 
 

@@ -25,8 +25,9 @@ class FilterableMap extends StatefulWidget {
   final String? activeCategory;
   final String? activeSubcategory;
 
-  FilterableMap({this.initialPosition, this.zoomLevel = 14.0, this.activeCategory, this.activeSubcategory});
-  
+  FilterableMap(
+      {this.initialPosition, this.zoomLevel = 14.0, this.activeCategory, this.activeSubcategory});
+
   @override
   _FilterableMapState createState() => _FilterableMapState();
 }
@@ -36,13 +37,12 @@ class _FilterableMapState extends State<FilterableMap> {
   final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
   LatLng? lastTapLatLng;
   List<Category> activeFilters = categories;
-  bool showEvents = true; // Asegúrate de que esto esté activado por defecto
-  bool showLocations = true; // Asegúrate de que esto esté activado por defecto
   bool isMapLoaded = false;
   bool addingLocation = false;
   bool addingEvent = false;
   final User? currentUser = FirebaseAuth.instance.currentUser;
   DateTime? lastButtonTap;
+  Symbol? userLocationSymbol;
 
   @override
   void initState() {
@@ -54,35 +54,36 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  void _onMapCreated(MapboxMapController controller) {
+  void _onMapCreated(MapboxMapController controller) async {
     mapController = controller;
-    _loadImageFromAssets();
-    _loadPointerImage();
-    _loadEventsImage();
+    await _loadImageFromAssets();
+    await _loadPointerImage();
+    await _loadEventsImage();
     mapController!.onSymbolTapped.add(_onSymbolTapped);
+    setState(() {
+      isMapLoaded = true;
+    });
+    await _getCurrentLocation(); // Añade la ubicación del usuario al crear el mapa
     if (widget.initialPosition != null) {
       mapController?.animateCamera(CameraUpdate.newLatLngZoom(
           widget.initialPosition!, widget.zoomLevel));
       _addEventSymbol(widget.initialPosition!);
     }
-    setState(() {
-      isMapLoaded = true;
-    });
-    _updateMap(); // Mueve esto aquí para asegurarte de que el mapa esté cargado antes de actualizar
+    await _updateMap(); // Mueve esto aquí para asegurarte de que el mapa esté cargado antes de actualizar
   }
 
   Future<void> _loadImageFromAssets() async {
     final ByteData bytes = await rootBundle.load('lib/images/IconUser.png');
     final Uint8List list = bytes.buffer.asUint8List();
-    await mapController!.addImage('icon-user', list);
+    await mapController?.addImage('icon-user', list);
   }
 
-  void _onStyleLoaded() {
-    _requestLocationPermission();
+  void _onStyleLoaded() async {
+    await _requestLocationPermission();
     if (widget.initialPosition != null) {
       mapController?.animateCamera(CameraUpdate.newLatLngZoom(
           widget.initialPosition!, widget.zoomLevel));
-      _updateMap();
+      await _updateMap();
     }
   }
 
@@ -90,7 +91,7 @@ class _FilterableMapState extends State<FilterableMap> {
     try {
       final ByteData bytes = await rootBundle.load('lib/images/Puntero.png');
       final Uint8List list = bytes.buffer.asUint8List();
-      await mapController!.addImage('puntero', list);
+      await mapController?.addImage('puntero', list);
     } catch (e) {
       print('Error loading pointer image: $e');
     }
@@ -100,7 +101,7 @@ class _FilterableMapState extends State<FilterableMap> {
     try {
       final ByteData bytes = await rootBundle.load('lib/images/evento.png');
       final Uint8List list = bytes.buffer.asUint8List();
-      await mapController!.addImage('evento', list);
+      await mapController?.addImage('evento', list);
     } catch (e) {
       print('Error loading event image: $e');
     }
@@ -131,8 +132,15 @@ class _FilterableMapState extends State<FilterableMap> {
       addingEvent = false;
     });
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => CrearNuevoEvento(latLng: latLng),
+      builder: (context) => CrearNuevoEvento(
+        latLng: latLng,
+        onEventAdded: _onEventAdded,
+      ),
     ));
+  }
+
+  void _onEventAdded() async {
+    await _updateMap();
   }
 
   void _onSymbolTapped(Symbol symbol) async {
@@ -320,17 +328,19 @@ class _FilterableMapState extends State<FilterableMap> {
     });
   }
 
-  void _addEventSymbol(LatLng latLng) {
+  Future<void> _addEventSymbol(LatLng latLng) async {
     if (mapController != null && isMapLoaded) {
-      setState(() {
-        mapController?.addSymbol(SymbolOptions(
+      try {
+        await mapController!.addSymbol(SymbolOptions(
           geometry: latLng,
           iconImage: 'evento',
           iconSize: 0.08,
         ));
-      });
+      } catch (e) {
+        print('Error adding event symbol: $e');
+      }
     } else {
-      print('MapController is not initialized');
+      print('MapController is not initialized or map is not loaded');
     }
   }
 
@@ -360,51 +370,52 @@ class _FilterableMapState extends State<FilterableMap> {
       return; // Exit the method if clearing symbols failed
     }
 
+    // Mantener la imagen del usuario siempre visible
+    if (currentUser != null && userLocationSymbol != null) {
+      mapController!.addSymbol(userLocationSymbol!.options);
+    }
+
     // Cargar ubicaciones
-    if (showLocations) {
-      for (var category in activeFilters) {
-        for (var subcategory in category.subcategories.entries) {
-          if (subcategory.value) {
-            FirebaseFirestore.instance
-                .collection('locations')
-                .where('category', isEqualTo: category.name)
-                .where('subcategory', isEqualTo: subcategory.key)
-                .get()
-                .then((querySnapshot) {
-              for (var doc in querySnapshot.docs) {
-                GeoPoint geoPoint = doc['coordinates'];
-                mapController!.addSymbol(SymbolOptions(
-                  geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-                  iconImage: 'puntero',
-                  iconSize: 0.08,
-                ));
-              }
-            });
-          }
+    for (var category in activeFilters) {
+      for (var subcategory in category.subcategories.entries) {
+        if (subcategory.value) {
+          FirebaseFirestore.instance
+              .collection('locations')
+              .where('category', isEqualTo: category.name)
+              .where('subcategory', isEqualTo: subcategory.key)
+              .get()
+              .then((querySnapshot) {
+            for (var doc in querySnapshot.docs) {
+              GeoPoint geoPoint = doc['coordinates'];
+              mapController!.addSymbol(SymbolOptions(
+                geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+                iconImage: 'puntero',
+                iconSize: 0.08,
+              ));
+            }
+          });
         }
       }
     }
 
     // Cargar eventos
-    if (showEvents) {
-      DateTime now = DateTime.now();
-      FirebaseFirestore.instance
-          .collection('events')
-          .get()
-          .then((querySnapshot) {
-        for (var doc in querySnapshot.docs) {
-          DateTime eventDateTime = (doc['dateTime'] as Timestamp).toDate();
-          if (eventDateTime.isAfter(now)) {
-            GeoPoint geoPoint = doc['coordinates'];
-            mapController!.addSymbol(SymbolOptions(
-              geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
-              iconImage: 'evento',
-              iconSize: 0.08,
-            ));
-          }
+    DateTime now = DateTime.now();
+    FirebaseFirestore.instance
+        .collection('events')
+        .get()
+        .then((querySnapshot) {
+      for (var doc in querySnapshot.docs) {
+        DateTime eventDateTime = (doc['dateTime'] as Timestamp).toDate();
+        if (eventDateTime.isAfter(now)) {
+          GeoPoint geoPoint = doc['coordinates'];
+          mapController!.addSymbol(SymbolOptions(
+            geometry: LatLng(geoPoint.latitude, geoPoint.longitude),
+            iconImage: 'evento',
+            iconSize: 0.08,
+          ));
         }
-      });
-    }
+      }
+    });
   }
 
   Future<void> _requestLocationPermission() async {
@@ -435,7 +446,7 @@ class _FilterableMapState extends State<FilterableMap> {
     try {
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.best);
-      _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
+      await _addUserLocationSymbol(LatLng(position.latitude, position.longitude));
     } catch (e) {
       print("Failed to get current location: $e");
     }
@@ -443,7 +454,7 @@ class _FilterableMapState extends State<FilterableMap> {
 
   Future<void> _addUserLocationSymbol(LatLng latLng) async {
     if (mapController != null) {
-      await mapController!.addSymbol(SymbolOptions(
+      userLocationSymbol = await mapController!.addSymbol(SymbolOptions(
         geometry: latLng,
         iconImage: 'icon-user',
         iconSize: 0.1,
@@ -454,14 +465,6 @@ class _FilterableMapState extends State<FilterableMap> {
   void _applyFilters(List<Category> selectedCategories) {
     setState(() {
       activeFilters = selectedCategories;
-    });
-    _updateMap();
-  }
-
-  void _toggleVisibility() {
-    setState(() {
-      showEvents = !showEvents;
-      showLocations = !showLocations;
     });
     _updateMap();
   }
@@ -571,19 +574,6 @@ class _FilterableMapState extends State<FilterableMap> {
                     },
             ),
             IconButton(
-              icon: Icon(
-                (showEvents && showLocations)
-                    ? Icons.visibility
-                    : Icons.visibility_off,
-              ),
-              onPressed: addingLocation || addingEvent
-                  ? null
-                  : () {
-                      if (_isDoubleTapOnButton()) return;
-                      _toggleVisibility();
-                    },
-            ),
-            IconButton(
               icon: Icon(Icons.event),
               onPressed: addingLocation || addingEvent
                   ? null
@@ -648,4 +638,13 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
 

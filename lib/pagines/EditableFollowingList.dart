@@ -48,8 +48,13 @@ class EditableFollowingList extends StatelessWidget {
         title: Text('Seguidos'),
         backgroundColor: const Color.fromARGB(255, 63, 214, 63),
       ),
-      body: FutureBuilder<List<DocumentSnapshot>>(
-        future: _getFollowing(),
+      body: StreamBuilder<List<DocumentSnapshot>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('following')
+            .snapshots()
+            .map((snapshot) => snapshot.docs),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -112,6 +117,8 @@ class EditableFollowingList extends StatelessWidget {
     );
   }
 }
+
+
 
 
 

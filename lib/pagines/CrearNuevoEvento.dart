@@ -9,11 +9,12 @@ import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-  
+
 class CrearNuevoEvento extends StatefulWidget {
   final LatLng latLng;
+  final Function onEventAdded;
 
-  CrearNuevoEvento({required this.latLng});
+  CrearNuevoEvento({required this.latLng, required this.onEventAdded});
 
   @override
   _CrearNuevoEventoState createState() => _CrearNuevoEventoState();
@@ -118,6 +119,7 @@ class _CrearNuevoEventoState extends State<CrearNuevoEvento> {
           'participants': [],
         });
 
+        widget.onEventAdded();
         Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -228,5 +230,6 @@ class _CrearNuevoEventoState extends State<CrearNuevoEvento> {
     );
   }
 }
+
 
 

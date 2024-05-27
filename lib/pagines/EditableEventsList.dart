@@ -5,8 +5,9 @@ import 'DetalleEvento.dart';
 
 class EditableEventsList extends StatelessWidget {
   final String userEmail;
+  final Function onEventDeleted;
 
-  EditableEventsList({required this.userEmail});
+  EditableEventsList({required this.userEmail, required this.onEventDeleted});
 
   Future<void> _showDeleteConfirmationDialog(BuildContext context, DocumentSnapshot event) async {
     showDialog(
@@ -26,6 +27,7 @@ class EditableEventsList extends StatelessWidget {
               child: Text('Borrar'),
               onPressed: () async {
                 await event.reference.delete();
+                onEventDeleted();
                 Navigator.of(context).pop();
               },
             ),
@@ -97,3 +99,4 @@ class EditableEventsList extends StatelessWidget {
     );
   }
 }
+

@@ -6,8 +6,9 @@ import 'CategoriasFiltros.dart';
 
 class EditableLocationsList extends StatelessWidget {
   final String userEmail;
+  final Function onLocationDeleted;
 
-  EditableLocationsList({required this.userEmail});
+  EditableLocationsList({required this.userEmail, required this.onLocationDeleted});
 
   Future<void> _showDeleteConfirmationDialog(BuildContext context, DocumentSnapshot location) async {
     showDialog(
@@ -27,6 +28,7 @@ class EditableLocationsList extends StatelessWidget {
               child: Text('Borrar'),
               onPressed: () async {
                 await location.reference.delete();
+                onLocationDeleted();
                 Navigator.of(context).pop();
               },
             ),
@@ -159,3 +161,5 @@ class EditableLocationsList extends StatelessWidget {
     );
   }
 }
+
+
