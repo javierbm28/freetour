@@ -33,8 +33,8 @@ class _FilterableMapState extends State<FilterableMap> {
   final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
   LatLng? lastTapLatLng;
   List<Category> activeFilters = categories;
-  bool showEvents = true;
-  bool showLocations = true;
+  bool showEvents = true; // Asegúrate de que esto esté activado por defecto
+  bool showLocations = true; // Asegúrate de que esto esté activado por defecto
   bool isMapLoaded = false;
   bool addingLocation = false;
   bool addingEvent = false;
@@ -62,7 +62,7 @@ class _FilterableMapState extends State<FilterableMap> {
     setState(() {
       isMapLoaded = true;
     });
-    _updateMap();
+    _updateMap(); // Mueve esto aquí para asegurarte de que el mapa esté cargado antes de actualizar
   }
 
   Future<void> _loadImageFromAssets() async {
@@ -626,3 +626,4 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+

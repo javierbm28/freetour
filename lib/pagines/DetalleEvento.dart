@@ -23,6 +23,7 @@ class _DetalleEventoState extends State<DetalleEvento> {
   int participantCount = 0;
   List<Map<String, dynamic>> participants = [];
   bool isDescriptionExpanded = false;
+  bool isLoading = false;
 
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -70,7 +71,11 @@ class _DetalleEventoState extends State<DetalleEvento> {
   }
 
   Future<void> _toggleParticipation() async {
-    if (currentUser == null) return;
+    if (currentUser == null || isLoading) return;
+
+    setState(() {
+      isLoading = true;
+    });
 
     try {
       DocumentReference eventRef = FirebaseFirestore.instance.collection('events').doc(widget.eventId);
@@ -95,9 +100,13 @@ class _DetalleEventoState extends State<DetalleEvento> {
       }
 
       await eventRef.update({'participants': participantsList});
-      _loadParticipants();
+      await _loadParticipants();
     } catch (e) {
       print('Error toggling participation: $e');
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -194,7 +203,7 @@ class _DetalleEventoState extends State<DetalleEvento> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         ElevatedButton(
-                          onPressed: _toggleParticipation,
+                          onPressed: isLoading ? null : _toggleParticipation,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey,
                             foregroundColor: Colors.black,
@@ -204,7 +213,9 @@ class _DetalleEventoState extends State<DetalleEvento> {
                             elevation: 5,
                             shadowColor: Colors.grey,
                           ),
-                          child: Text(isParticipating ? 'Desapuntarse' : 'Apuntarse'),
+                          child: isLoading
+                              ? CircularProgressIndicator()
+                              : Text(isParticipating ? 'Desapuntarse' : 'Apuntarse'),
                         ),
                         SizedBox(width: 10.0),
                         ElevatedButton(
@@ -286,6 +297,8 @@ class _DetalleEventoState extends State<DetalleEvento> {
     );
   }
 }
+
+
 
 
 
