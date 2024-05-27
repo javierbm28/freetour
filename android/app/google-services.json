@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "328017867857",
+    "project_id": "flutterfirebase2024-3088f",
+    "storage_bucket": "flutterfirebase2024-3088f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:328017867857:android:4837fd8a671ee1a01d7470",
+        "android_client_info": {
+          "package_name": "app.meedu.flutter_firebase_2024"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaVsNjy1c01TiZybOBzN1NB-M_vDr-lEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:328017867857:android:c73782eca4bb09e61d7470",
+        "android_client_info": {
+          "package_name": "app.meedu.freetour"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaVsNjy1c01TiZybOBzN1NB-M_vDr-lEs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
