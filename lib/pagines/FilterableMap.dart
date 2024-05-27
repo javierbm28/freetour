@@ -31,17 +31,14 @@ class FilterableMap extends StatefulWidget {
 class _FilterableMapState extends State<FilterableMap> {
   MapboxMapController? mapController;
   final LatLng defaultCenter = const LatLng(41.3851, 2.1734);
-  Symbol? lastAddedSymbol;
   LatLng? lastTapLatLng;
   List<Category> activeFilters = categories;
   bool showEvents = true;
   bool showLocations = true;
   bool isMapLoaded = false;
-  bool dialogOpen = false;
+  bool addingLocation = false;
+  bool addingEvent = false;
   final User? currentUser = FirebaseAuth.instance.currentUser;
-
-  TextEditingController nameController = TextEditingController();
-  String? selectedType;
   DateTime? lastButtonTap;
 
   @override
@@ -103,63 +100,33 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  DateTime? lastTap;
-  void _onMapClicked(Point<double> point, LatLng latLng) async {
-    final DateTime now = DateTime.now();
-    if (lastTap != null &&
-        now.difference(lastTap!) < Duration(milliseconds: 500)) {
-      lastTapLatLng = latLng;
-      if (!dialogOpen) {
-        _showCreationDialog(context, latLng);
-      }
-      lastTap = null;
-    } else {
-      lastTap = now;
+  void _onMapClicked(Point<double> point, LatLng latLng) {
+    if (addingLocation) {
+      _navigateToAddLocation(latLng);
+    } else if (addingEvent) {
+      _navigateToAddEvent(latLng);
     }
   }
 
-  void _showCreationDialog(BuildContext context, LatLng latLng) {
-    dialogOpen = true;
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('¿Qué quieres registrar?'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                title: Text('Agregar una ubicación'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  dialogOpen = false;
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => CrearNuevaUbicacion(
-                      latLng: latLng,
-                      onLocationSaved: _onLocationSaved,
-                    ),
-                  ));
-                },
-              ),
-              ListTile(
-                title: Text('Agregar un evento'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  dialogOpen = false;
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => CrearNuevoEvento(
-                      latLng: latLng,
-                    ),
-                  ));
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    ).then((_) {
-      dialogOpen = false;
+  void _navigateToAddLocation(LatLng latLng) {
+    setState(() {
+      addingLocation = false;
     });
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => CrearNuevaUbicacion(
+        latLng: latLng,
+        onLocationSaved: _onLocationSaved,
+      ),
+    ));
+  }
+
+  void _navigateToAddEvent(LatLng latLng) {
+    setState(() {
+      addingEvent = false;
+    });
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => CrearNuevoEvento(latLng: latLng),
+    ));
   }
 
   void _onSymbolTapped(Symbol symbol) async {
@@ -411,10 +378,6 @@ class _FilterableMapState extends State<FilterableMap> {
     }
   }
 
-  Future<void> _loadSavedLocations() async {
-    // No need to load saved locations initially
-  }
-
   Future<void> _requestLocationPermission() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -474,6 +437,20 @@ class _FilterableMapState extends State<FilterableMap> {
     _updateMap();
   }
 
+  void _toggleAddingLocation() {
+    setState(() {
+      addingLocation = !addingLocation;
+      addingEvent = false;
+    });
+  }
+
+  void _toggleAddingEvent() {
+    setState(() {
+      addingEvent = !addingEvent;
+      addingLocation = false;
+    });
+  }
+
   bool _isDoubleTapOnButton() {
     final DateTime now = DateTime.now();
     if (lastButtonTap != null &&
@@ -510,37 +487,59 @@ class _FilterableMapState extends State<FilterableMap> {
             onPressed: () {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
-                  builder: (context) => PaginaInici(), 
+                  builder: (context) => PaginaInici(),
                 ),
               );
             },
           ),
           actions: [
+            TextButton.icon(
+              icon: Icon(Icons.add),
+              label: Text('Agregar Ubicación'),
+              onPressed: addingEvent
+                  ? null
+                  : () {
+                      _toggleAddingLocation();
+                    },
+            ),
+            TextButton.icon(
+              icon: Icon(Icons.add),
+              label: Text('Agregar Evento'),
+              onPressed: addingLocation
+                  ? null
+                  : () {
+                      _toggleAddingEvent();
+                    },
+            ),
             IconButton(
               icon: Icon(Icons.filter_alt),
-              onPressed: () {
-                if (_isDoubleTapOnButton()) return;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => Filtros(
-                      onApplyFilters: (selectedCategories) {
-                        _applyFilters(selectedCategories);
-                      },
-                    ),
-                  ),
-                );
-              },
+              onPressed: addingLocation || addingEvent
+                  ? null
+                  : () {
+                      if (_isDoubleTapOnButton()) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => Filtros(
+                            onApplyFilters: (selectedCategories) {
+                              _applyFilters(selectedCategories);
+                            },
+                          ),
+                        ),
+                      );
+                    },
             ),
             IconButton(
               icon: Icon(Icons.location_on),
-              onPressed: () {
-                if (_isDoubleTapOnButton()) return;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => UbicacionesGuardadas(),
-                  ),
-                );
-              },
+              onPressed: addingLocation || addingEvent
+                  ? null
+                  : () {
+                      if (_isDoubleTapOnButton()) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => UbicacionesGuardadas(),
+                        ),
+                      );
+                    },
             ),
             IconButton(
               icon: Icon(
@@ -548,41 +547,60 @@ class _FilterableMapState extends State<FilterableMap> {
                     ? Icons.visibility
                     : Icons.visibility_off,
               ),
-              onPressed: () {
-                if (_isDoubleTapOnButton()) return;
-                _toggleVisibility();
-              },
+              onPressed: addingLocation || addingEvent
+                  ? null
+                  : () {
+                      if (_isDoubleTapOnButton()) return;
+                      _toggleVisibility();
+                    },
             ),
             IconButton(
               icon: Icon(Icons.event),
-              onPressed: () {
-                if (_isDoubleTapOnButton()) return;
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => ListaEventos(),
-                  ),
-                );
-              },
+              onPressed: addingLocation || addingEvent
+                  ? null
+                  : () {
+                      if (_isDoubleTapOnButton()) return;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ListaEventos(),
+                        ),
+                      );
+                    },
             ),
             IconButton(
               icon: Icon(Icons.person),
-              onPressed: () {
-                if (currentUser != null) {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => VerPerfil(
-                        userId: currentUser!.uid,
-                        userEmail: currentUser!.email!,
-                      ),
-                    ),
-                  );
-                }
-              },
+              onPressed: addingLocation || addingEvent
+                  ? null
+                  : () {
+                      if (currentUser != null) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => VerPerfil(
+                              userId: currentUser!.uid,
+                              userEmail: currentUser!.email!,
+                            ),
+                          ),
+                        );
+                      }
+                    },
             ),
           ],
         ),
         body: Column(
           children: <Widget>[
+            if (addingLocation || addingEvent)
+              Container(
+                color: const Color.fromARGB(255, 63, 214, 63),
+                padding: EdgeInsets.all(8.0),
+                width: double.infinity, // Ocupa todo el ancho de la pantalla
+                child: Text(
+                  addingLocation
+                      ? "Pulsa en el mapa donde quieres agregar una ubicación"
+                      : "Pulsa en el mapa donde quieres agregar un evento",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center, // Centra el texto
+                ),
+              ),
             Expanded(
               child: MapboxMap(
                 accessToken:
@@ -601,6 +619,13 @@ class _FilterableMapState extends State<FilterableMap> {
     );
   }
 }
+
+
+
+
+
+
+
 
 
 

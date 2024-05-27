@@ -278,10 +278,14 @@ class _VerPerfilState extends State<VerPerfil> {
     );
   }
 
-  void _navigateToEditProfile(BuildContext context) {
-    Navigator.of(context).push(
+  Future<void> _navigateToEditProfile(BuildContext context) async {
+    bool? result = await Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => MostrarDatos()),
     );
+    if (result == true) {
+      // Si se realizaron cambios, actualizar los datos
+      _fetchData();
+    }
   }
 
   void _navigateToLocationsList(BuildContext context) {

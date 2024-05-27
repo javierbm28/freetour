@@ -92,6 +92,16 @@ class _MostrarDatosState extends State<MostrarDatos> {
   }
 
   Future<void> _saveChanges() async {
+    // Verifica que los campos no estén vacíos
+    if (_nombreController.text.isEmpty ||
+        _apellidosController.text.isEmpty ||
+        _apodoController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Todos los campos deben estar llenos')),
+      );
+      return;
+    }
+
     String? imageUrl;
     if (_imageFile != null || _imageBytes != null) {
       final storageRef = FirebaseStorage.instance.ref().child('profile_images').child('${user.uid}.jpg');
@@ -131,7 +141,7 @@ class _MostrarDatosState extends State<MostrarDatos> {
       });
     }
 
-    Navigator.pop(context);
+    Navigator.pop(context, true); // Pasa un valor true para indicar que se realizaron cambios
   }
 
   Future<void> _removeProfileImage() async {
@@ -314,6 +324,7 @@ class _MostrarDatosState extends State<MostrarDatos> {
     );
   }
 }
+
 
 
 

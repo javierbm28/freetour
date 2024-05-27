@@ -7,9 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mapbox_gl/mapbox_gl.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:geolocator/geolocator.dart';
+import 'package:mime/mime.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+  
 class CrearNuevoEvento extends StatefulWidget {
   final LatLng latLng;
 
@@ -54,17 +54,33 @@ class _CrearNuevoEventoState extends State<CrearNuevoEvento> {
   Future<void> _pickImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
+      String? mimeType;
       if (kIsWeb) {
         _webImage = await pickedFile.readAsBytes();
+        mimeType = lookupMimeType('', headerBytes: _webImage);
       } else {
         _imageFile = File(pickedFile.path);
+        mimeType = lookupMimeType(_imageFile!.path);
       }
-      setState(() {});
+      if (mimeType != null && mimeType.startsWith('image/')) {
+        setState(() {});
+      } else {
+        setState(() {
+          _webImage = null;
+          _imageFile = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Por favor, selecciona un archivo de imagen válido.')),
+        );
+      }
     }
   }
 
   Future<void> _saveEvent() async {
-    if (_formKey.currentState!.validate() && _selectedDate != null && _selectedTime != null) {
+    if (_formKey.currentState!.validate() &&
+        _selectedDate != null &&
+        _selectedTime != null &&
+        (_imageFile != null || _webImage != null)) {
       String? imageUrl;
       if (_imageFile != null || _webImage != null) {
         final storageRef = FirebaseStorage.instance.ref().child('event_images').child('${DateTime.now()}.jpg');
@@ -102,11 +118,14 @@ class _CrearNuevoEventoState extends State<CrearNuevoEvento> {
           'participants': [],
         });
 
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('No se ha podido autenticar al usuario.')));
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Por favor complete todos los campos y adjunte una imagen.')));
     }
   }
 
@@ -115,63 +134,99 @@ class _CrearNuevoEventoState extends State<CrearNuevoEvento> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Crear nuevo evento'),
+        backgroundColor: Color.fromARGB(255, 63, 214, 63),
       ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: <Widget>[
-              TextFormField(
-                controller: _tituloController,
-                decoration: InputDecoration(labelText: 'Título del evento'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese un título';
-                  }
-                  return null;
-                },
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            constraints: BoxConstraints(maxWidth: 400),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  TextFormField(
+                    controller: _tituloController,
+                    decoration: InputDecoration(
+                      labelText: 'Título del evento',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese un título';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: _descripcionController,
+                    decoration: InputDecoration(
+                      labelText: 'Descripción',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese una descripción';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () => _selectDateTime(context),
+                    child: Text(
+                      _selectedDate == null || _selectedTime == null
+                          ? 'Seleccione fecha y hora'
+                          : '${DateFormat.yMd().format(_selectedDate!)} ${_selectedTime!.format(context)}',
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  _imageFile == null && _webImage == null
+                      ? Text('No hay imagen seleccionada.')
+                      : kIsWeb
+                          ? Image.memory(_webImage!)
+                          : Image.file(_imageFile!),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _pickImage,
+                    child: Text('Adjuntar imagen'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: BorderSide(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      shadowColor: Colors.grey,
+                      elevation: 5,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _saveEvent,
+                    child: Text('Guardar evento'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      side: BorderSide(color: Colors.black),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      shadowColor: Colors.grey,
+                      elevation: 5,
+                    ),
+                  ),
+                ],
               ),
-              TextFormField(
-                controller: _descripcionController,
-                decoration: InputDecoration(labelText: 'Descripción'),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingrese una descripción';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
-              TextButton(
-                onPressed: () => _selectDateTime(context),
-                child: Text(
-                  _selectedDate == null || _selectedTime == null
-                      ? 'Seleccione fecha y hora'
-                      : '${DateFormat.yMd().format(_selectedDate!)} ${_selectedTime!.format(context)}',
-                ),
-              ),
-              SizedBox(height: 16),
-              _imageFile == null && _webImage == null
-                  ? Text('No hay imagen seleccionada.')
-                  : kIsWeb
-                      ? Image.memory(_webImage!)
-                      : Image.file(_imageFile!),
-              TextButton(
-                onPressed: _pickImage,
-                child: Text('Adjuntar imagen'),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _saveEvent,
-                child: Text('Guardar evento'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
 
